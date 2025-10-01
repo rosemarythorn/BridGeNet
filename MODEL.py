@@ -12,7 +12,6 @@ class Model:
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
         self.aSpace=aSpace
         self.lSpace=lSpace
-        self.sTmem=list()
         self.outHandler=list()
         self.lIn=lIn or self.lSpace[0]
         if lOut==None:
@@ -22,6 +21,8 @@ class Model:
         self.lOut=lOut or self.lSpace[1]
         self.inG=inG
         self.outG=outG
+
+        self.mutationPointerLAE=(None,None,None)
         
         if self.bRAW==None:
             shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
@@ -112,13 +113,8 @@ class Model:
         for i in range(lSpace[0],lSpace[1]+1):
             for each in bDictUnsorted[i]:
                 #allows for premature terminations of check if any condition is found to be false to save on performance
-                if each.actAddress>=aSpace[0]:
-                    if each.actAddress<=aSpace[1]:
-                        if each.passAddress>=aSpace[0]:
-                            if each.passAddress<=aSpace[1]:
-                                if each.layer>=lSpace[0]:
-                                    if each.layer<lSpace[1]:
-                                        shelf[i].append(each)
+                if each.actAddress>=aSpace[0] and each.actAddress<=aSpace[1] and each.passAddress>=aSpace[0] and each.passAddress<=aSpace[1] and each.layer>=lSpace[0] and each.layer<lSpace[1]:
+                    shelf[i].append(each)
         return shelf
 
 
@@ -157,40 +153,66 @@ class Model:
                 nodeshopper[i][each]=0
         return nodeshopper
     
-    def runModel(self,inState):
-        for i in range(len(inState)):
-            self.nDict[self.lIn][i]=inState[i]
-        for i in range(self.lSpace[0],self.lSpace[1]+1):
-            for each in self.bDict[i]:
-                shelf=each.executeBridgeSmall(self.nDict[i][each.actAddress])
-                self.nDict[i+1][shelf[1]]=shelf[0]+self.nDict[i+1][shelf[1]]
-        shelf=list()
-        for each in self.outG:
-            shelf.append(self.nDict[self.lOut][each])
-        #print(self.nDict)
-        self.outHandler.append((inState,shelf))
-        
-        for i in range(len(self.outHandler)):
-            print("Outhandler Element ",i,": ",self.outHandler[i])
 
-        return (inState,shelf)
+
+    def connectionsRunner(self,inState,lSpace,bDict,lOut):        
+        #Creating instance of nDict (to prevent overwriting from multiple runs)
+        nDict=self.nDict
+        #Running Bridge Computations
+        for i in range(len(inState)):
+            nDict[self.lIn][i]=inState[i]  #Adds the inputs from inState to nDict at lIn
+        for i in range(lSpace[0],lSpace[1]+1):
+            for each in bDict[i]:
+                shelf=None
+                if type(each)==BRIDGE.Bridge:
+                    #print("Bridge should run here")
+                    shelf=each.executeBridge(nDict[i][each.actAddress]) #Activates each bridge, layer by layer. Will need to be modified slightly to work with submodels.
+                else:
+                    #print("Submodel should run here")
+                    shelf=None
+                nDict[i+1][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
+        outShelf=list()
+        for each in self.outG:
+            outShelf.append(nDict[lOut][each])
+        #print(self.nDict)
+        self.outHandler.append((inState,outShelf))
+        return outShelf
     
+
+
+    def runModel(self,inState,lOut=None,outG=None):
+        #Null Convergence/Declarations
+        lOut=lOut or self.lOut
+        outG=outG or self.outG
+        bDict=self.bDict
+
+        outShelf=self.connectionsRunner(inState,self.lSpace,bDict,lOut)
+
+        return (inState,outShelf)
+    
+
+    
+    def mutateElement(self,mutAmount,mutElement,mlSpace=None,maSpace=None,targLA=None):
+
+        #Adjustment Step
+        mlSpace=mlSpace or self.lSpace
+        maSpace=maSpace or self.aSpace
+        lSelected=targLA[0] or random.randrange(mlSpace[0],mlSpace[1])
+        aSelected=targLA[1] or random.randrange(maSpace[0],maSpace[1])
+
+        self.mutationPointerLAE=(lSelected,aSelected,self.bDict[lSelected][aSelected].mutateElement(mutAmount,mutElement))
+
+
+    def purgeLAE(self):
+        self.bDict[self.mutationPointerLAE[0]][self.mutationPointerLAE[1]].purgeLAE()
+        self.mutationPointerLAE=(None,None,None)
+
+
 
     def sTmemPush(self,score=None,pullindex=0):
         self.sTmem.append((self.outHandler.pop(pullindex)),score)
 
-        '''
-    def runModelalt(self,inState):
-        for i in range(len(inState)):
-            self.nDict[self.lIn][i]=inState[i]
-        for i in range(self.lSpace[0],self.lSpace[1]+1):
-            for each in self.bDict[i]:
-                self.nDict=each.executeBridge(self.nDict)
-        shelf=list()
-        for each in self.outG:
-            shelf.append(self.nDict[self.lOut][each])
-        return shelf
-        '''
+
         #the above section was essentially a test version seeing whether passing the entire ndict to the bridge could execute
         #quicker than just passing a single element. predictably, it did not. additionally, for some reason I don't quite understand,
         #it causes an underflow error in sigmoid handling in the bridge, whereas in the "Small" bridge handler, it does not.

@@ -1,0 +1,60 @@
+class Env:
+    def __init__(self):
+        print("nothin here yet")
+        self.ready=True
+        self.vType=0 #DEFAULT VALUES: Selected based on Ur
+        self.fFreq=0 #DEFAULT VALUES: Selected based on Ur
+        self.bSize=25 #DEFAULT VALUES: Selected based on Ur
+        self.playerCount=2
+        playersTurn=1
+        '''
+        format of type is a series of numbers in list format (example 0, 2, 12037, 682) which represents the major details
+        about the game as referenced by the Intermediate class
+        VALIDITY
+        0 for input-validity for combined controls or single control
+        1 for input-validity for each control independently or single control
+        2 for any-input for combined controls or single control
+        3 for any-input for some controls but input-validity for others
+
+        AMOUNT OF FEEDBACK
+        0 is exlusively scorewise feedback based on win/loss
+        1 is score based on performance in rounds
+        2 is score based on individual actions
+
+        SIZE OF BOARDSTATE
+        5 digit number representing raw input data from the boardstate including all relevant memory data
+
+        NUMBER OF CONTROLS
+        3 (if too little or too much can be tweaked if necessary) digits represent the sum number of controls.
+
+
+        '''
+
+        def checkValidity(self,move):
+            #Fill in your game's rule checker to make sure invalid moves arent submitted
+            if 5==3:
+                return False
+            if 70=="Lettuce":
+                return False
+            
+            '''
+            put each rule check here like the ones above. You can have branching ones, so long as each terminates in a
+            return false statement if the rule happens to have been broken. Thus, it will avoid checking extra rules if it determines
+            one to have been violated.
+            Rules should typically refer to internal values representing the state of the board
+            '''
+            return True
+        
+
+        def adjustToPOV(self,playerNo):
+            #Given a player number, adjust the board to be from that player's POV.
+            self.playersTurn=playerNo
+
+
+        def makePlay(self,move):
+            self.ready=False
+            #Put here the ways the move changes the board or interacts with the environment or what have you
+            #Then put in a statement which switches it to the next player by updating self.playersTurn and performing adjustToPOV
+            
+            #Finally, if youre interacting with a real-world environment, 
+            self.ready=True

@@ -1,0 +1,48 @@
+import MODEL
+import ENV
+
+
+
+class Intermediate:
+    def __init__(self, Player, Env):
+        self.Player=Player
+        self.Env=Env
+
+    def playGame(self,Player, InterimScorer, EndScorer, Env):
+        gameOver=False
+        while gameOver==False:
+            EnvReady=False
+            while EnvReady==False:
+                #Training protocol here
+                print("nothin goin on here yet")
+                EnvReady=Env.ready
+            playerOutcome=Player.runModel(Env.state)
+
+            if Env.vType==0:
+                self.makeAttemptsList()
+        
+    def playTurn(self,Player,Env):
+        playerOutcome=Player.runModel(Env.state)
+        if Env.vType==0:
+            attempts=self.makeAttemptsListCombine(playerOutcome,Env)
+            i=-1
+            valid==False
+            while valid==False:
+                i+=1
+                valid=Env.checkValidity(attempts[i])
+            
+
+
+
+    def makeAttemptsListCombine(self,playerOutcome,Env):
+        numberOfAttempts=len(playerOutcome[1])/Env.cSize
+        index=0
+        attempts=list()
+        for i in range(numberOfAttempts):
+            attempts[i]=list()
+            for i2 in range(Env.cSize):
+                attempts[i][i2].append(playerOutcome[1][index])
+                index+=1
+        return attempts
+
+    

@@ -17,6 +17,7 @@ class Bridge:
         self.actAddress=actAddress
         self.passAddress=passAddress
         self.layer=layer
+        self.mutAddressE=None
 
         '''
     def executeBridge(self,nDict):
@@ -37,7 +38,7 @@ class Bridge:
         return nDictworking
         '''
     
-    def executeBridgeSmall(self,inVal):
+    def executeBridge(self,inVal):
         inVal=(inVal*self.weight)+self.bias
         outVal=0
         if self.actvFunc==0:
@@ -51,6 +52,22 @@ class Bridge:
         #print("Bridge acted from address",self.layer,"x",self.actAddress," to address ",self.layer+1,"x",self.passAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
         #print("Output before activation: ",inVal,", Output after activation: ",outVal)
         return (outVal,self.passAddress)
+    
+
+    def mutateElement(self,mutAmount, mutElement=None):
+        mutElement=mutElement or self.mutAddressE or random.randint(0,2)
+        self.mutAddressE=mutElement
+        if mutElement==0:
+            self.weight+=mutAmount
+        elif mutElement==1:
+            self.bias+=mutAmount
+        elif mutElement==2:
+            self.actvFunc+=mutAmount
+        return self.mutAddressE
+    
+    def purgeLAE(self):
+        self.mutAddressE=None
+
     
 
 
