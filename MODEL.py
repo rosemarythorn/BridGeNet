@@ -7,25 +7,23 @@ import multiprocessing
 
 
 class Model:
-    def __init__(self, lSpace, aSpace, inG, outG, lIn="DEFAULT",lOut="DEFAULT",bRAW="DEFAULT",bCount="DEFAULT"):
+    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None):
         self.bRAW=bRAW
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
         self.aSpace=aSpace
         self.lSpace=lSpace
         self.sTmem=list()
         self.outHandler=list()
-        if lIn=="DEFAULT":
-            self.lIn=self.lSpace[0]
-        else:
-            self.lIn=lIn
-        if lOut=="DEFAULT":
+        self.lIn=lIn or self.lSpace[0]
+        if lOut==None:
             self.lOut=self.lSpace[1]
         else:
             self.lOut=lOut
+        self.lOut=lOut or self.lSpace[1]
         self.inG=inG
         self.outG=outG
         
-        if self.bRAW=="DEFAULT":
+        if self.bRAW==None:
             shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
             self.bDict=shelf[0]
             self.bDictUnsorted=self.bDict
@@ -46,13 +44,10 @@ class Model:
         #print("Nodes Dict generated")
 
 
-    def decomp(self,bRAW="DEFAULT",lSpace="DEFAULT",aSpace="DEFAULT"):
-        if bRAW=="DEFAULT":
-            bRAW=self.bRAW
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
-        if aSpace=="DEFAULT":
-            aSpace=self.aSpace
+    def decomp(self,bRAW=None,lSpace=None,aSpace=None):
+        bRAW=bRAW or self.bRAW
+        lSpace=lSpace or self.lSpace
+        aSpace=aSpace or self.aSpace
         
 
         #Add later once i figure out the storage method for compiled bridges
@@ -64,13 +59,11 @@ class Model:
                 bDictUnsorted[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i))
         
         
-    def generateBridges(self,lSpace="DEFAULT",aSpace="DEFAULT"):
+    def generateBridges(self,lSpace=None,aSpace=None):
         bDictAddressPairs={}
         bDict={}
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
-        if aSpace=="DEFAULT":
-            aSpace=self.aSpace
+        lSpace=lSpace or self.lSpace
+        aSpace=aSpace or self.aSpace
 
         for i in range(lSpace[0],lSpace[1]+1):
             bDict[i]=list()
@@ -95,13 +88,10 @@ class Model:
                 #print("Bridge #",i2," generated from nodes ",actAddress," to ",passAddress, " in layer ",i)
         return (bDict,bDictAddressPairs)
     
-    def generateAddressPairs(self,lSpace="DEFAULT",aSpace="DEFAULT",bDict="DEFAULT"):
-        if bDict=="DEFAULT":
-            bDict=self.bDict
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
-        if aSpace=="DEFAULT":
-            aSpace=self.aSpace
+    def generateAddressPairs(self,lSpace=None,aSpace=None,bDict=None):
+        bDict=bDict or self.bDict
+        lSpace=lSpace or self.lSpace
+        aSpace=aSpace or self.aSpace
         
         bDictAddressPairs={}
         for i in range(lSpace[0],lSpace[1]):
@@ -112,13 +102,10 @@ class Model:
 
 
     
-    def vCheck(self, bDictUnsorted="DEFAULT", aSpace="DEFAULT", lSpace="DEFAULT"):
-        if bDictUnsorted=="DEFAULT":
-            bDictUnsorted=self.bDictUnsorted
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
-        if aSpace=="DEFAULT":
-            aSpace=self.aSpace
+    def vCheck(self, bDictUnsorted=None, aSpace=None, lSpace=None):
+        bDictUnsorted=bDictUnsorted or self.bDictUnsorted
+        lSpace=lSpace or self.lSpace
+        aSpace=aSpace or self.aSpace
         shelf={}
         for i in range(lSpace[0],lSpace[1]+1):
             shelf[i]=list()
@@ -136,19 +123,13 @@ class Model:
 
 
 
-    def coallateAddresses(self,bDict="DEFAULT",lSpace="DEFAULT",inG="DEFAULT",outG="DEFAULT",lIn="DEFAULT", lOut="DEFAULT"):
-        if bDict=="DEFAULT":
-            bDict=self.bDict
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
-        if inG=="DEFAULT":
-            inG=self.inG
-        if outG=="DEFAULT":
-            outG=self.outG
-        if lIn=="DEFAULT":
-            lIn=self.lIn
-        if lOut=="DEFAULT":
-            lOut=self.lOut
+    def coallateAddresses(self,bDict=None,lSpace=None,inG=None,outG=None,lIn=None, lOut=None):
+        bDict=bDict or self.bDict
+        lSpace=lSpace or self.lSpace
+        inG=inG or self.inG
+        outG=outG or self.outG
+        lIn=lIn or self.lIn
+        lOut=lOut or self.lOut
         
         shelf={}
         for i in range(lSpace[0],lSpace[1]+1):
@@ -164,11 +145,9 @@ class Model:
             shelf[lIn].add(each)
         return shelf
     
-    def makeNDict(self,aDict="DEFAULT",lSpace="DEFAULT"):
-        if aDict=="DEFAULT":
-            aDict=self.aDict
-        if lSpace=="DEFAULT":
-            lSpace=self.lSpace
+    def makeNDict(self,aDict=None,lSpace=None):
+        aDict=aDict or self.aDict
+        lSpace=lSpace or self.lSpace
         
         nodeshopper={}
         for i in range(lSpace[0],lSpace[1]+1):
@@ -197,7 +176,7 @@ class Model:
         return (inState,shelf)
     
 
-    def sTmemPush(self,score="DEFAULT",pullindex=0):
+    def sTmemPush(self,score=None,pullindex=0):
         self.sTmem.append((self.outHandler.pop(pullindex)),score)
 
         '''
