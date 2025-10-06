@@ -26,7 +26,7 @@ class Env:
         32-bit number (to be able to handle enormous inputs if necessary) representing raw input data from the boardstate including all relevant memory data
 
         NUMBER OF CONTROLS
-        3 (if too little or too much can be tweaked if necessary) digits represent the sum number of controls.
+        16-bit number (if too little or too much can be tweaked if necessary) digits represent the sum number of controls.
         '''
 
 
