@@ -5,7 +5,8 @@ class Env:
         self.vType=0 #DEFAULT VALUES: Selected based on Ur
         self.fFreq=0 #DEFAULT VALUES: Selected based on Ur
         self.bSize=25 #DEFAULT VALUES: Selected based on Ur
-        self.playerCount=2
+        self.cSize=16 #DEFAULT VALUES: Selected based on Ur
+				self.playerCount=2
         playersTurn=1
         '''
         format of type is a series of numbers in list format (example 0, 2, 12037, 682) which represents the major details
@@ -22,13 +23,12 @@ class Env:
         2 is score based on individual actions
 
         SIZE OF BOARDSTATE
-        5 digit number representing raw input data from the boardstate including all relevant memory data
+        32-bit number (to be able to handle enormous inputs if necessary) representing raw input data from the boardstate including all relevant memory data
 
         NUMBER OF CONTROLS
         3 (if too little or too much can be tweaked if necessary) digits represent the sum number of controls.
-
-
         '''
+
 
         def checkValidity(self,move):
             #Fill in your game's rule checker to make sure invalid moves arent submitted
