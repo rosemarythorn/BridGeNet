@@ -5,6 +5,11 @@ import time
 import multiprocessing
 import algs
 
+#Note: add submodel support into initialize functions
+#bDict elements should be able to be initialized as the same thing, right?
+#We should probably code ztuff such that models stored in bDict are indexes to mDict
+
+
 class Model:
     def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None):
         self.bRAW=bRAW
