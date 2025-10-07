@@ -4,6 +4,10 @@ import numpy as np
 import time
 import multiprocessing
 
+#Note: add submodel support into initialize functions
+#bDict elements should be able to be initialized as the same thing, right?
+#We should probably code ztuff such that models stored in bDict are indexes to mDict
+
 def sigmoid(x):
     if x>10:
         return 1
