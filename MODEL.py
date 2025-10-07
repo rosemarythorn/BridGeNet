@@ -4,14 +4,20 @@ import numpy as np
 import time
 import multiprocessing
 
-
+def sigmoid(x):
+    if x>10:
+        return 1
+    elif x<-10:
+        return -1
+    else: 
+        return round(((2*(1 / (1 + np.exp(-x))))-1),5)
 
 class Model:
     def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None):
         self.bRAW=bRAW
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
         self.aSpace=aSpace
-        self.lSpace=lSpace
+        self.lSpace=lSpace     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
         self.outHandler=list()
         self.lIn=lIn or self.lSpace[0]
         if lOut==None:
@@ -22,7 +28,7 @@ class Model:
         self.inG=inG
         self.outG=outG
 
-        self.mutationPointerLAE=(None,None,None)
+        self.adjustPointerLB=(None,None)
         
         if self.bRAW==None:
             shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
@@ -54,7 +60,7 @@ class Model:
         #Add later once i figure out the storage method for compiled bridges
         bDictUnsorted={}
 
-        for i in range(lSpace[0],lSpace[1]+1):
+        for i in range(lSpace[0]+1,lSpace[1]+1):
             bDictUnsorted[i]=list()
             for i2 in range(0,self.bCount):
                 bDictUnsorted[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i))
@@ -66,27 +72,31 @@ class Model:
         lSpace=lSpace or self.lSpace
         aSpace=aSpace or self.aSpace
 
-        for i in range(lSpace[0],lSpace[1]+1):
+        #Initializes empty lists for all Valid operative Addresses
+        for i in range(lSpace[0]+1,lSpace[1]+1):  #goes from 1 layer above lSpace[0] to final element lSpace[1]+1
             bDict[i]=list()
             bDictAddressPairs[i]=list()
-        if self.bCount>(self.aSpace[1]-self.aSpace[0])**2:
-            self.bCount=(self.aSpace[1]-self.aSpace[0])**2
+        
+        bCountMax=(self.aSpace[1]-self.aSpace[0])**2
+        if self.bCount>bCountMax:
+            self.bCount=bCountMax
             print("More bridges requested than number of valid address pair combinations within scope: bridge count lowered to prevent repeats")
-        for i in range(lSpace[0],lSpace[1]): #does not generate bridges originating on the final layer, since yknow. that would cause problems.
+        
+        for i in range(lSpace[0]+1,lSpace[1]+1): #does not generate bridges originating on the first layer, since yknow. that would cause problems.
             for i2 in range(0,self.bCount):
-                actAddress=0
-                passAddress=0
+                startAddress=0
+                endAddress=0
                 keepgoing=True
                 while keepgoing:
-                    actAddress=random.randint(aSpace[0],aSpace[1])
-                    passAddress=random.randint(aSpace[0],aSpace[1])
-                    if (actAddress,passAddress) not in bDictAddressPairs[i]:
+                    startAddress=random.randint(aSpace[0],aSpace[1])
+                    endAddress=random.randint(aSpace[0],aSpace[1])
+                    if (startAddress,endAddress) not in bDictAddressPairs[i]:
                         keepgoing=False
                     #else:
-                        #print("Bridge #",i2," attempt deleted from nodes ",actAddress," to ",passAddress, " in layer ",i)
-                bDict[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i,actAddress=actAddress,passAddress=passAddress))
-                bDictAddressPairs[i].append((actAddress,passAddress))
-                #print("Bridge #",i2," generated from nodes ",actAddress," to ",passAddress, " in layer ",i)
+                        #print("Bridge #",i2," attempt deleted from nodes ",startAddress," to ",endAddress, " in layer ",i)
+                bDict[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i,startAddress=startAddress,endAddress=endAddress))
+                bDictAddressPairs[i].append((startAddress,endAddress))
+                #print("Bridge #",i2," generated from nodes ",startAddress," to ",endAddress, " in layer ",i)
         return (bDict,bDictAddressPairs)
     
     def generateAddressPairs(self,lSpace=None,aSpace=None,bDict=None):
@@ -98,7 +108,7 @@ class Model:
         for i in range(lSpace[0],lSpace[1]):
             bDictAddressPairs[i]=list()
             for each in bDict[i]:
-                bDictAddressPairs[i].append((each.actAddress, each.passAddress))
+                bDictAddressPairs[i].append((each.startAddress, each.endAddress))
         return bDictAddressPairs
 
 
@@ -113,7 +123,7 @@ class Model:
         for i in range(lSpace[0],lSpace[1]+1):
             for each in bDictUnsorted[i]:
                 #allows for premature terminations of check if any condition is found to be false to save on performance
-                if each.actAddress>=aSpace[0] and each.actAddress<=aSpace[1] and each.passAddress>=aSpace[0] and each.passAddress<=aSpace[1] and each.layer>=lSpace[0] and each.layer<lSpace[1]:
+                if each.startAddress>=aSpace[0] and each.startAddress<=aSpace[1] and each.endAddress>=aSpace[0] and each.endAddress<=aSpace[1] and each.layer>=lSpace[0] and each.layer<lSpace[1]:
                     shelf[i].append(each)
         return shelf
 
@@ -131,10 +141,10 @@ class Model:
         for i in range(lSpace[0],lSpace[1]+1):
             shelf[i]=set()
             #print(shelf)
-        for i in range(lSpace[0],lSpace[1]): #does not include last layer, hence why lSpace does not have 1 added to it
+        for i in range(lSpace[0]+1,lSpace[1]+1):
             for each in bDict[i]:
-                shelf[i].add(each.actAddress)
-                shelf[i+1].add(each.passAddress)
+                shelf[i-1].add(each.startAddress)
+                shelf[i].add(each.endAddress)
         for each in outG:
             shelf[lOut].add(each)
         for each in inG:
@@ -161,21 +171,39 @@ class Model:
         #Running Bridge Computations
         for i in range(len(inState)):
             nDict[self.lIn][i]=inState[i]  #Adds the inputs from inState to nDict at lIn
-        for i in range(lSpace[0],lSpace[1]+1):
+        for i in range(lSpace[0]+1,lSpace[1]+1):
+            
+            #Activation function
+            if i!=lSpace[0]+1:
+                for i2 in nDict[i]:
+                    nDict[i][i2]=sigmoid(nDict[i][i2])
+
+
             for each in bDict[i]:
                 shelf=None
                 if type(each)==BRIDGE.Bridge:
                     #print("Bridge should run here")
-                    shelf=each.executeBridge(nDict[i][each.actAddress]) #Activates each bridge, layer by layer. Will need to be modified slightly to work with submodels.
+                    shelf=each.executeBridge(nDict[i-1][each.startAddress]) #Activates each bridge, layer by layer.
+                    nDict[i][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
                 else:
                     #print("Submodel should run here")
-                    shelf=None
-                nDict[i+1][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
+                    inStateSub=()
+                    for each2 in each.inG:
+                        inStateSub.append(nDict[i-1][each2])
+                    shelf=each.runModel(inState=inStateSub)[0]
+                
+
+                
+            #print("Previous layer ",nDict[i-1])
+            #print("Resultant layer ",nDict[i])
         outShelf=list()
         for each in self.outG:
-            outShelf.append(nDict[lOut][each])
+            outShelf.append(nDict[lOut][each])# #Pulls all outG elements into outShelf list
         #print(self.nDict)
         self.outHandler.append((inState,outShelf))
+        for i in nDict:
+            for i2 in nDict[i]:
+                nDict[i][i2]=0
         return outShelf
     
 
@@ -192,20 +220,23 @@ class Model:
     
 
     
-    def mutateElement(self,mutAmount,mutElement,mlSpace=None,maSpace=None,targLA=None):
+    def adjustElement(self,adjAmount=0.0001,idealE=None,adjLSpace=None,):
 
-        #Adjustment Step
-        mlSpace=mlSpace or self.lSpace
-        maSpace=maSpace or self.aSpace
-        lSelected=targLA[0] or random.randrange(mlSpace[0],mlSpace[1])
-        aSelected=targLA[1] or random.randrange(maSpace[0],maSpace[1])
+        #Define target node
+        adjLSpace=adjLSpace or self.lSpace
+        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
+        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
+        print("Adjusting at LB: ", self.adjustPointerLB)
 
-        self.mutationPointerLAE=(lSelected,aSelected,self.bDict[lSelected][aSelected].mutateElement(mutAmount,mutElement))
+
+        oV=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)
+        self.adjustPointerLB=(lSelected,bSelected)
+        return oV
 
 
     def purgeLAE(self):
-        self.bDict[self.mutationPointerLAE[0]][self.mutationPointerLAE[1]].purgeLAE()
-        self.mutationPointerLAE=(None,None,None)
+        self.bDict[self.adjustPointerLB[0]][self.adjustPointerLB[1]].purgeLAE()
+        self.adjustPointerLB=(None,None)
 
 
 

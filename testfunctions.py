@@ -1,7 +1,10 @@
 import random
 import MODEL
 import BRIDGE
+import INTERMEDIATE
 import numpy as np
+
+
 def generateexampleNDict():
         examplenDict={}
         for i1 in range(0,10):
@@ -15,10 +18,12 @@ def printNDict(nDictinput):
 
 lSpace=(0,10)
 aSpace=(0,10)
-bCount=100
-testcount=5
+bCount=10
+testcount=100
 nettime=0
-testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5,6,7,8,9),bCount=bCount)
+testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 
 for i in range(testcount):
+        testmodel.adjustElement(1)
+        testmodel.purgeLAE()
         print(testmodel.runModel((26,7,19,4,63,7)))
