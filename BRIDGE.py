@@ -10,18 +10,18 @@ def sigmoid(x):
       return round(((2*(1 / (1 + np.exp(-x))))-1),5)
 
 class Bridge:
-    def __init__(self,weight, bias, actvFunc, actAddress, passAddress, layer):
+    def __init__(self,weight, bias, actvFunc, startAddress, endAddress, layer):
         self.weight=weight
         self.bias=bias
         self.actvFunc=actvFunc
-        self.actAddress=actAddress
-        self.passAddress=passAddress
+        self.startAddress=startAddress
+        self.endAddress=endAddress
         self.layer=layer
-        self.mutAddressE=None
+        self.adjAddressE=None
 
         '''
     def executeBridge(self,nDict):
-        inVal=(nDict[self.layer][self.actAddress]*self.weight)+self.bias
+        inVal=(nDict[self.layer][self.startAddress]*self.weight)+self.bias
         outVal=0
         if self.actvFunc==0:
             outVal=inVal
@@ -31,9 +31,9 @@ class Bridge:
             outVal=sigmoid(inVal)
         
         nDictworking=nDict
-        nDictworking[self.layer+1][self.passAddress]=nDict[self.layer+1][self.passAddress]+outVal
+        nDictworking[self.layer+1][self.endAddress]=nDict[self.layer+1][self.endAddress]+outVal
 #if not debugging, comment out this next section
-        #print("Bridge acted from address",self.layer,"x",self.actAddress," to address ",self.layer+1,"x",self.passAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        #print("Bridge acted from address",self.layer,"x",self.startAddress," to address ",self.layer+1,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
 
         return nDictworking
         '''
@@ -49,39 +49,41 @@ class Bridge:
             outVal=sigmoid(inVal)
 #if not debugging, comment out this next section
         #
-        #print("Bridge acted from address",self.layer,"x",self.actAddress," to address ",self.layer+1,"x",self.passAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
         #print("Output before activation: ",inVal,", Output after activation: ",outVal)
-        return (outVal,self.passAddress)
+        return (outVal,self.endAddress)
     
 
-    def mutateElement(self,mutAmount, mutElement=None):
-        mutElement=mutElement or self.mutAddressE or random.randint(0,2)
-        self.mutAddressE=mutElement
-        if mutElement==0:
-            self.weight+=mutAmount
-        elif mutElement==1:
-            self.bias+=mutAmount
-        elif mutElement==2:
-            self.actvFunc+=mutAmount
-        return self.mutAddressE
+    def adjustElement(self,adjAmount, idealE=None):
+        adjElement=self.adjAddressE or idealE or random.randint(0,1)
+        self.adjAddressE=adjElement
+        oV=0
+        if adjElement==0:
+            oV=self.weight
+            self.weight+=adjAmount
+        elif adjElement==1:
+            oV=self.bias
+            self.bias+=adjAmount
+        elif adjElement==2:
+            oV=self.actvFunc
+            self.actvFunc+=adjAmount
+        return oV
+    
     
     def purgeLAE(self):
-        self.mutAddressE=None
+        self.adjAddressE=None
 
     
 
 
 
     
-def generateRandomBridge(lSpace,aSpace,layer="DEFAULT",actAddress="DEFAULT",passAddress="DEFAULT"):
-    if layer=="DEFAULT":
-        layer=random.randrange(lSpace[0],lSpace[1])
-    if actAddress=="DEFAULT":
-        actAddress=random.randrange(aSpace[0],aSpace[1])
-    if passAddress=="DEFAULT":
-        passAddress=random.randrange(aSpace[0],aSpace[1])
+def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None):
+    layer=layer or random.randrange(lSpace[0],lSpace[1])
+    startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])
+    endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])
         
-    return Bridge(random.randrange(-10,10),random.randrange(-10,10),random.randrange(1,2),actAddress,passAddress,layer)
+    return Bridge(random.randrange(-10,10),random.randrange(-10,10),0,startAddress,endAddress,layer)
 #for i in range(0,100):    
 #    testaSpace=[0,3]
 #    testlSpace=[0,9]

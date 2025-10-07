@@ -6,7 +6,7 @@ class Env:
         self.fFreq=0 #DEFAULT VALUES: Selected based on Ur
         self.bSize=25 #DEFAULT VALUES: Selected based on Ur
         self.cSize=16 #DEFAULT VALUES: Selected based on Ur
-				self.playerCount=2
+        self.playerCount=2
         playersTurn=1
         '''
         format of type is a series of numbers in list format (example 0, 2, 12037, 682) which represents the major details
