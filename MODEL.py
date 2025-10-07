@@ -3,18 +3,12 @@ import BRIDGE
 import numpy as np
 import time
 import multiprocessing
-
-def sigmoid(x):
-    if x>10:
-        return 1
-    elif x<-10:
-        return -1
-    else: 
-        return round(((2*(1 / (1 + np.exp(-x))))-1),5)
+import algs
 
 class Model:
-    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None):
+    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None):
         self.bRAW=bRAW
+        self.mdlDict=mdlDict
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
         self.aSpace=aSpace
         self.lSpace=lSpace     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
@@ -176,7 +170,7 @@ class Model:
             #Activation function
             if i!=lSpace[0]+1:
                 for i2 in nDict[i]:
-                    nDict[i][i2]=sigmoid(nDict[i][i2])
+                    nDict[i][i2]=algs.leakyReLU(nDict[i][i2])
 
 
             for each in bDict[i]:
@@ -226,7 +220,7 @@ class Model:
         adjLSpace=adjLSpace or self.lSpace
         lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
         bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
-        print("Adjusting at LB: ", self.adjustPointerLB)
+        #print("Adjusting at LB: ", self.adjustPointerLB)
 
 
         oV=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)

@@ -1,13 +1,6 @@
 import numpy as np
 import random
-
-def sigmoid(x):
-  if x>10:
-      return 1
-  elif x<-10:
-      return -1
-  else: 
-      return round(((2*(1 / (1 + np.exp(-x))))-1),5)
+import algs
 
 class Bridge:
     def __init__(self,weight, bias, actvFunc, startAddress, endAddress, layer):
@@ -44,12 +37,12 @@ class Bridge:
         if self.actvFunc==0:
             outVal=inVal
         elif self.actvFunc==1:
-            outVal=sigmoid(inVal)
+            outVal=algs.sigmoid(inVal)
         elif self.actvFunc==2:
-            outVal=sigmoid(inVal)
+            outVal=algs.leakyReLU(inVal)
 #if not debugging, comment out this next section
         #
-        print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        #print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
         #print("Output before activation: ",inVal,", Output after activation: ",outVal)
         return (outVal,self.endAddress)
     
@@ -83,7 +76,7 @@ def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=N
     startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])
     endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])
         
-    return Bridge(random.randrange(-10,10),random.randrange(-10,10),0,startAddress,endAddress,layer)
+    return Bridge(random.randrange(-1000,1000)/1000,random.randrange(-1000,1000)/1000,0,startAddress,endAddress,layer)
 #for i in range(0,100):    
 #    testaSpace=[0,3]
 #    testlSpace=[0,9]

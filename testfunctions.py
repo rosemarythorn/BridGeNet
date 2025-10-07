@@ -24,6 +24,7 @@ nettime=0
 testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 
 for i in range(testcount):
-        testmodel.adjustElement(1)
+        testmodel.adjustElement(0.001)
+        testmodel.adjustElement(-0.001)
         testmodel.purgeLAE()
         print(testmodel.runModel((26,7,19,4,63,7)))

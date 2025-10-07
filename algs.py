@@ -8,9 +8,12 @@ def sigmoid(x):
         return -1
     else: 
         return round(((2*(1 / (1 + np.exp(-x))))-1),5)
+
+def leakyReLU(x):
+    return max(x,x/10)
     
 algsDict={
     "Pass": Pass,
     "sigmoid": sigmoid,
-
+    "leakyReLU": leakyReLU
 }
