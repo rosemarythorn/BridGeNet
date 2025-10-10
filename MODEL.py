@@ -4,6 +4,7 @@ import numpy as np
 import time
 import multiprocessing
 import algs
+import copy
 
 #Note: add submodel support into initialize functions
 #bDict elements should be able to be initialized as the same thing, right?
@@ -166,43 +167,45 @@ class Model:
 
     def connectionsRunner(self,inState,lSpace,bDict,lOut):        
         #Creating instance of nDict (to prevent overwriting from multiple runs)
-        nDict=self.nDict
+        opNDict=copy.deepcopy(self.nDict)
         #Running Bridge Computations
         for i in range(len(inState)):
-            nDict[self.lIn][i]=inState[i]  #Adds the inputs from inState to nDict at lIn
+            opNDict[self.lIn][i]=inState[i]  #Adds the inputs from inState to nDict at lIn
         for i in range(lSpace[0]+1,lSpace[1]+1):
             
             #Activation function
             if i!=lSpace[0]+1:
-                for i2 in nDict[i]:
-                    nDict[i][i2]=algs.leakyReLU(nDict[i][i2])
-
+                for i2 in opNDict[i]:
+                    opNDict[i][i2]=algs.leakyReLU(opNDict[i][i2])
+                    
 
             for each in bDict[i]:
                 shelf=None
                 if type(each)==BRIDGE.Bridge:
                     #print("Bridge should run here")
-                    shelf=each.executeBridge(nDict[i-1][each.startAddress]) #Activates each bridge, layer by layer.
-                    nDict[i][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
+                    '''
+                    shelf=each.executeBridge(opNDict[i-1][each.startAddress]) #Activates each bridge, layer by layer.
+                    opNDict[i][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
+                    #Variant using experimental optimized individual value calculation
+                    '''
+                    each.executeBridgeDependent(opNDict)
+                '''
                 else:
                     #print("Submodel should run here")
                     inStateSub=()
                     for each2 in each.inG:
-                        inStateSub.append(nDict[i-1][each2])
+                        inStateSub.append(opNDict[i-1][each2])
                     shelf=each.runModel(inState=inStateSub)[0]
-                
+                '''
 
                 
-            #print("Previous layer ",nDict[i-1])
-            #print("Resultant layer ",nDict[i])
+            #print("Previous layer ",opNDict[i-1])
+            #print("Resultant layer ",opNDict[i])
         outShelf=list()
         for each in self.outG:
-            outShelf.append(nDict[lOut][each])# #Pulls all outG elements into outShelf list
-        #print(self.nDict)
+            outShelf.append(opNDict[lOut][each])# #Pulls all outG elements into outShelf list
+        #print(self.opNDict)
         self.outHandler.append((inState,outShelf))
-        for i in nDict:
-            for i2 in nDict[i]:
-                nDict[i][i2]=0
         return outShelf
     
 

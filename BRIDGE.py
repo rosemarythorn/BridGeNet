@@ -12,39 +12,49 @@ class Bridge:
         self.layer=layer
         self.adjAddressE=None
 
-        '''
-    def executeBridge(self,nDict):
-        inVal=(nDict[self.layer][self.startAddress]*self.weight)+self.bias
-        outVal=0
-        if self.actvFunc==0:
-            outVal=inVal
-        elif self.actvFunc==1:
-            outVal=sigmoid(inVal)
-        elif self.actvFunc==2:
-            outVal=sigmoid(inVal)
         
-        nDictworking=nDict
-        nDictworking[self.layer+1][self.endAddress]=nDict[self.layer+1][self.endAddress]+outVal
-#if not debugging, comment out this next section
-        #print("Bridge acted from address",self.layer,"x",self.startAddress," to address ",self.layer+1,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
-
-        return nDictworking
-        '''
-    
-    def executeBridge(self,inVal):
-        inVal=(inVal*self.weight)+self.bias
-        outVal=0
+    def bridgeActivate (self,inVal):
         if self.actvFunc==0:
             outVal=inVal
         elif self.actvFunc==1:
             outVal=algs.sigmoid(inVal)
         elif self.actvFunc==2:
             outVal=algs.leakyReLU(inVal)
+        return outVal
+    
+   
+
+    def executeBridgeDependent(self,nDict):
+        print(nDict[self.layer-1])
+        inVal=(nDict[self.layer-1][self.startAddress]*self.weight)+self.bias
+        outVal=0
+        outVal=self.bridgeActivate(inVal)        
+        nDict[self.layer][self.endAddress]+=outVal
+#if not debugging, comment out this next section
+        print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        print("Input before Bridge Operations: ",nDict[self.layer-1][self.startAddress], "From address ",self.startAddress, "Output before activation: ",inVal,", Output after activation: ",outVal)
+        print(nDict[self.layer-1])
+        
+    
+    def executeBridgeMixed(self,inVal):
+        inVal=(inVal*self.weight)+self.bias
+        outVal=0
+        outVal=self.bridgeActivate(inVal)
 #if not debugging, comment out this next section
         #
         #print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
         #print("Output before activation: ",inVal,", Output after activation: ",outVal)
         return (outVal,self.endAddress)
+    
+    def executeBridgeIndependent(self,inVal):
+        inVal=(inVal*self.weight)+self.bias
+        outVal=0
+        outVal=self.bridgeActivate(inVal)
+#if not debugging, comment out this next section
+        #
+        #print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        #print("Output before activation: ",inVal,", Output after activation: ",outVal)
+        return outVal
     
 
     def adjustElement(self,adjAmount, idealE=None):

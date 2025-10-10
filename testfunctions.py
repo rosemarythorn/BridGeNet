@@ -19,7 +19,7 @@ def printNDict(nDictinput):
 lSpace=(0,10)
 aSpace=(0,10)
 bCount=10
-testcount=100
+testcount=1
 nettime=0
 testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 
