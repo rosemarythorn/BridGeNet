@@ -25,7 +25,8 @@ class Bridge:
    
 
     def executeBridgeDependent(self,nDict):
-        print(nDict[self.layer-1])
+        print(nDict[0])
+        print(nDict[0])
         inVal=(nDict[self.layer-1][self.startAddress]*self.weight)+self.bias
         outVal=0
         outVal=self.bridgeActivate(inVal)        
