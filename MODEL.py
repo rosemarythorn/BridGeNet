@@ -169,8 +169,8 @@ class Model:
         #Creating instance of nDict (to prevent overwriting from multiple runs)
         opNDict=copy.deepcopy(self.nDict)
         #Running Bridge Computations
-        for i in range(len(inState)):
-            opNDict[self.lIn][i]=inState[i]  #Adds the inputs from inState to nDict at lIn
+        for each in self.inG:
+            opNDict[self.lIn][each]=inState[each]  #Adds the inputs from inState to nDict at lIn
         for i in range(lSpace[0]+1,lSpace[1]+1):
             
             #Activation function
