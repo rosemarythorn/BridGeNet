@@ -10,7 +10,7 @@ class Bridge:
         self.startAddress=startAddress
         self.endAddress=endAddress
         self.layer=layer
-        self.adjAddressE=None
+        self.adjPointerE=None
 
         
     def bridgeActivate (self,inVal):
@@ -25,16 +25,17 @@ class Bridge:
    
 
     def executeBridgeDependent(self,nDict):
-        print(nDict[0])
-        print(nDict[0])
         inVal=(nDict[self.layer-1][self.startAddress]*self.weight)+self.bias
         outVal=0
         outVal=self.bridgeActivate(inVal)        
         nDict[self.layer][self.endAddress]+=outVal
 #if not debugging, comment out this next section
-        print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
-        print("Input before Bridge Operations: ",nDict[self.layer-1][self.startAddress], "From address ",self.startAddress, "Output before activation: ",inVal,", Output after activation: ",outVal)
-        print(nDict[self.layer-1])
+        #print("Input Layer: ",nDict[self.layer-1])
+        #print("Bridge acted from address",self.layer-1,"x",self.startAddress," to address ",self.layer,"x",self.endAddress, "with weight ",self.weight," and bias ",self.bias," with activation function code ",self.actvFunc)
+        #print("Input before Bridge Operations: ",nDict[self.layer-1][self.startAddress], "From address ",self.startAddress, "Output before activation: ",inVal,", Output after activation: ",outVal)
+        #print("Output Layer: ",nDict[self.layer])
+        #print()
+        #print()
         
     
     def executeBridgeMixed(self,inVal):
@@ -59,23 +60,24 @@ class Bridge:
     
 
     def adjustElement(self,adjAmount, idealE=None):
-        adjElement=self.adjAddressE or idealE or random.randint(0,1)
-        self.adjAddressE=adjElement
+        adjElement=self.adjPointerE or idealE or random.randint(1,2)
+        self.adjPointerE=adjElement
         oV=0
-        if adjElement==0:
+        if adjElement==1:
             oV=self.weight
             self.weight+=adjAmount
-        elif adjElement==1:
+        elif adjElement==2:
             oV=self.bias
             self.bias+=adjAmount
-        elif adjElement==2:
+        elif adjElement==3:
             oV=self.actvFunc
             self.actvFunc+=adjAmount
+        #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
         return oV
     
     
     def purgeLAE(self):
-        self.adjAddressE=None
+        self.adjPointerE=None
 
     
 

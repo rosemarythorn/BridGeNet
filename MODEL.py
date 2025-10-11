@@ -20,10 +20,6 @@ class Model:
         self.lSpace=lSpace     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
         self.outHandler=list()
         self.lIn=lIn or self.lSpace[0]
-        if lOut==None:
-            self.lOut=self.lSpace[1]
-        else:
-            self.lOut=lOut
         self.lOut=lOut or self.lSpace[1]
         self.inG=inG
         self.outG=outG
@@ -169,8 +165,9 @@ class Model:
         #Creating instance of nDict (to prevent overwriting from multiple runs)
         opNDict=copy.deepcopy(self.nDict)
         #Running Bridge Computations
-        for each in self.inG:
-            opNDict[self.lIn][each]=inState[each]  #Adds the inputs from inState to nDict at lIn
+        for i in range(len(self.inG)):
+            if len(inState)>i:    #for example, if i=3, and length of 3, it means index 3 doesnt exist in inState, since it would only go up to 2. 
+                opNDict[self.lIn][self.inG[i]]=inState[i]  #Adds the inputs from inState to nDict at lIn
         for i in range(lSpace[0]+1,lSpace[1]+1):
             
             #Activation function
@@ -233,8 +230,15 @@ class Model:
 
         oV=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)
         self.adjustPointerLB=(lSelected,bSelected)
+        '''
+        print("Adjusted element at ",self.adjustPointerLB)
+        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        else:
+            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+        '''
         return oV
-
+        
 
     def purgeLAE(self):
         self.bDict[self.adjustPointerLB[0]][self.adjustPointerLB[1]].purgeLAE()
