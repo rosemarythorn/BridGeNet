@@ -4,55 +4,74 @@ import algs
 import random
 
 class Intermediate:
-    def __init__(self, mdlDict, envDict,algDict):
+    def __init__(self, mdlDict, envDict,algDict=algs.algsDict):
         self.mdlDict=mdlDict
         self.envDict=envDict
         self.algDict=algDict
 
 
-    def backprop(self,inState,opModelIndex,scorerIndex=(False,"Pass"),adjAmount=0.01,stepsize=0.01,flip=True):
+    def backprop(self,inState,opModelIndex,scorerIndex=(False,"Pass"),adjAmountP=0.01,stepsize=0.01,flip=True):
         #scorerIndex is a dual index where element 0 is a boolean dictating True if the scorer is a model and False if it is handcoded.
         #second element of scorerIndex is just the key in mdlDict or algDict it's found at.
-        outState1=self.mdlDict[opModelIndex].runModel(inState)
+        adjAmount=adjAmountP or 0.01
+        #print(adjAmount," Adjust amount")
+        outState1=self.mdlDict[opModelIndex].runModel(inState)[1]
         score1=0
         if scorerIndex[0]:
             score1=self.mdlDict[scorerIndex[1]].runModel(inState+outState1)
         else:
-            score1=self.algDict[scorerIndex[1]].runAlg(inState+outState1)
+            score1=self.algDict[scorerIndex[1]](inState,outState1)
+            #print("Running Alg ",scorerIndex[1])
         #Adjusts and runs model
-        if flip==True:
-            if random.randrange(0,1)==1:
-                adjAmount=-adjAmount
-
+        if flip:
+            if bool(random.randint(0, 1)):
+                adjAmount=0-adjAmount
+        #print(adjAmount," Adjust amount")
         
+
+        oV=self.mdlDict[opModelIndex].adjustElement(0)
         if oV+adjAmount>1:
             adjAmount=1-oV
         elif oV+adjAmount<-1:
             adjAmount=-1-oV
-
         oV=self.mdlDict[opModelIndex].adjustElement(adjAmount)
+        #print(adjAmount," Adjust amount")
         
         
-        outState2=self.mdlDict[opModelIndex].runModel(inState)
+        outState2=self.mdlDict[opModelIndex].runModel(inState)[1]
         #Finds post-adjustment score
         score2=0
         if scorerIndex[0]:
             score2=self.mdlDict[scorerIndex[1]].runModel(inState+outState2)
         else:
-            score2=self.algDict[scorerIndex[1]].runAlg(inState+outState2)
+            score2=self.algDict[scorerIndex[1]](inState,outState2)
+        #print(score1," ",score2)
+        print("Score1: ",score1)
+        #print(score2)
 
-        dS=score2-score1
+        dS=score2-score1        #loss
+        print("SQR Difference in Score: ",dS)
         dE=adjAmount
-        grad=dS/dE
-        step=stepsize*grad
-        if oV+step>1:
-            step=1-oV
-        elif oV+step<1:
-            step=-1-oV
+        if dE!=0:
+            grad=dS/dE
+            print("Gradient: ",grad)
+            step=stepsize*grad
+            
+            if oV+step>8:
+                step=8-oV
+            elif oV+step<0.125:
+                step=0.125-oV
+            else:
+                step=step*min(abs(-1-(oV+step)),abs(1-(oV+step)))#first find oV and stepscaled, then calculate the absolute distance from either endpoint (Whichever is lower) iff value is between -1 and 1. If it isnt, normalize it to whichever of those values it's closest to.
+            
+            actualstep=step-adjAmount
+            self.mdlDict[opModelIndex].adjustElement(actualstep)
         else:
-            step=step*min(abs(-1-(oV+step)),abs(1-(oV+step)))#first find oV and stepscaled, then calculate the absolute distance from either endpoint (Whichever is lower) iff value is between -1 and 1. If it isnt, normalize it to whichever of those values it's closest to.
-        actualstep=step-adjAmount
-        self.mdlDict[opModelIndex].adjustElement(actualstep)
+            print("Couldn't change value any more without exceeding bounds!")
+        self.mdlDict[opModelIndex].purgeLAE()
+        print()
+
+        return outState1
         
 
         

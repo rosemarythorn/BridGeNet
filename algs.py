@@ -11,9 +11,17 @@ def sigmoid(x):
 
 def leakyReLU(x):
     return max(x,x/10)
+
+def testScorer(inState,outState):
+    w=outState[0]
+    x=outState[1]
+    y=outState[2]
+    z=outState[3]
+    return (1000/((w+x)*(2*(y-z))+(1000-x)))
     
 algsDict={
     "Pass": Pass,
     "sigmoid": sigmoid,
-    "leakyReLU": leakyReLU
+    "leakyReLU": leakyReLU,
+    "testScorer": testScorer
 }

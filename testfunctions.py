@@ -3,6 +3,9 @@ import MODEL
 import BRIDGE
 import INTERMEDIATE
 import numpy as np
+import algs
+
+#0 may be invalid address
 
 
 def generateexampleNDict():
@@ -16,19 +19,27 @@ def printNDict(nDictinput):
      for key,value in nDictinput.items():
           print(f"{key}: {value}")
 
-lSpace=(0,10)
-aSpace=(0,10)
-bCount=10
-testcount=100
+def generateTestMdlDict():
+      mdlDict={
+        1:MODEL.Model(lSpace,aSpace,(1,2,3,4),(1,2,3,4,5,6),bCount=bCount)
+      }
+      return mdlDict
+
+lSpace=(0,3)
+aSpace=(1,6)
+bCount=100
+testcount=10000
 nettime=0
 testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
 
 for i in range(testcount):
-        testmodel.adjustElement(0.001)
-        testmodel.adjustElement(-0.001)
+        #testmodel.adjustElement(0.001)
+        #testmodel.adjustElement(-0.001)
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
-        testmodel.purgeLAE()
-        print(testmodel.runModel((26,7,19,4,63,7)))
+        #testmodel.purgeLAE()
+        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountP=0.1,stepsize=100000000000,flip=True)
+        #print(testoutput)

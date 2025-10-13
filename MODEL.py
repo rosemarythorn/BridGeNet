@@ -201,7 +201,8 @@ class Model:
         outShelf=list()
         for each in self.outG:
             outShelf.append(opNDict[lOut][each])# #Pulls all outG elements into outShelf list
-        #print(self.opNDict)
+            #print(outShelf)
+        #print(outShelf)
         self.outHandler.append((inState,outShelf))
         return outShelf
     
@@ -241,8 +242,9 @@ class Model:
         
 
     def purgeLAE(self):
-        self.bDict[self.adjustPointerLB[0]][self.adjustPointerLB[1]].purgeLAE()
-        self.adjustPointerLB=(None,None)
+        if self.adjustPointerLB!=(None,None):
+            self.bDict[self.adjustPointerLB[0]][self.adjustPointerLB[1]].purgeLAE()
+            self.adjustPointerLB=(None,None)
 
 
 

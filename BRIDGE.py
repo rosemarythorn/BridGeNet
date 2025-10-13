@@ -66,9 +66,10 @@ class Bridge:
         if adjElement==1:
             oV=self.weight
             self.weight+=adjAmount
+            print("Adjusted Weight by ",adjAmount)
         elif adjElement==2:
             oV=self.bias
-            self.bias+=adjAmount
+            print("Adjusted Bias by ",adjAmount)
         elif adjElement==3:
             oV=self.actvFunc
             self.actvFunc+=adjAmount
@@ -86,7 +87,7 @@ class Bridge:
     
 def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None):
     layer=layer or random.randrange(lSpace[0],lSpace[1])
-    startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])
+    startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])    #makes 0 an invalid bridge address
     endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])
         
     return Bridge(random.randrange(-1000,1000)/1000,random.randrange(-1000,1000)/1000,0,startAddress,endAddress,layer)
