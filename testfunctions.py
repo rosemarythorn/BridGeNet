@@ -4,7 +4,7 @@ import BRIDGE
 import INTERMEDIATE
 import numpy as np
 import algs
-
+import pickle
 #0 may be invalid address
 
 
@@ -25,7 +25,7 @@ def generateTestMdlDict():
       }
       return mdlDict
 
-lSpace=(0,3)
+lSpace=(0,2)
 aSpace=(1,6)
 bCount=100
 testcount=10000
@@ -41,5 +41,5 @@ for i in range(testcount):
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #testmodel.purgeLAE()
-        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountP=0.1,stepsize=100000000000,flip=True)
+        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountW=0.1,adjAmountB=0.1,stepsize=0.1,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False)
         #print(testoutput)

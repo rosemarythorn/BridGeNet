@@ -66,15 +66,31 @@ class Bridge:
         if adjElement==1:
             oV=self.weight
             self.weight+=adjAmount
-            print("Adjusted Weight by ",adjAmount)
+            #print("Adjusted Weight by ",adjAmount)
         elif adjElement==2:
             oV=self.bias
-            print("Adjusted Bias by ",adjAmount)
+            self.bias+=adjAmount
+            #print("Adjusted Bias by ",adjAmount)
         elif adjElement==3:
             oV=self.actvFunc
             self.actvFunc+=adjAmount
         #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
-        return oV
+        return (oV,self.adjPointerE)
+    
+    def pollElement(self,idealE=None):
+        adjElement=self.adjPointerE or idealE or random.randint(1,2)
+        self.adjPointerE=adjElement
+        oV=0
+        if adjElement==1:
+            oV=self.weight
+            #print("Adjusted Weight by ",adjAmount)
+        elif adjElement==2:
+            oV=self.bias
+            #print("Adjusted Bias by ",adjAmount)
+        elif adjElement==3:
+            oV=self.actvFunc
+        #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
+        return (oV,self.adjPointerE)
     
     
     def purgeLAE(self):
@@ -85,12 +101,12 @@ class Bridge:
 
 
     
-def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None):
+def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds):
     layer=layer or random.randrange(lSpace[0],lSpace[1])
     startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])    #makes 0 an invalid bridge address
     endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])
         
-    return Bridge(random.randrange(-1000,1000)/1000,random.randrange(-1000,1000)/1000,0,startAddress,endAddress,layer)
+    return Bridge(random.uniform(wBounds[0],wBounds[1]),random.uniform(bBounds[0],bBounds[1]),0,startAddress,endAddress,layer)
 #for i in range(0,100):    
 #    testaSpace=[0,3]
 #    testlSpace=[0,9]

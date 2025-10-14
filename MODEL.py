@@ -12,7 +12,7 @@ import copy
 
 
 class Model:
-    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None):
+    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds):
         self.bRAW=bRAW
         self.mdlDict=mdlDict
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
@@ -23,6 +23,8 @@ class Model:
         self.lOut=lOut or self.lSpace[1]
         self.inG=inG
         self.outG=outG
+        self.wBounds=wBounds
+        self.bBounds=bBounds
 
         self.adjustPointerLB=(None,None)
         
@@ -62,8 +64,10 @@ class Model:
                 bDictUnsorted[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i))
         
         
-    def generateBridges(self,lSpace=None,aSpace=None):
+    def generateBridges(self,lSpace=None,aSpace=None,wBounds=None,bBounds=None):
         bDictAddressPairs={}
+        wBounds=wBounds or self.wBounds
+        bBounds=bBounds or self.bBounds
         bDict={}
         lSpace=lSpace or self.lSpace
         aSpace=aSpace or self.aSpace
@@ -90,7 +94,7 @@ class Model:
                         keepgoing=False
                     #else:
                         #print("Bridge #",i2," attempt deleted from nodes ",startAddress," to ",endAddress, " in layer ",i)
-                bDict[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i,startAddress=startAddress,endAddress=endAddress))
+                bDict[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i,startAddress=startAddress,endAddress=endAddress,wBounds=wBounds,bBounds=bBounds))
                 bDictAddressPairs[i].append((startAddress,endAddress))
                 #print("Bridge #",i2," generated from nodes ",startAddress," to ",endAddress, " in layer ",i)
         return (bDict,bDictAddressPairs)
@@ -228,8 +232,9 @@ class Model:
         bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
         #print("Adjusting at LB: ", self.adjustPointerLB)
 
-
-        oV=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)
+        shelf=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)
+        oV=shelf[0]
+        adjE=shelf[1]
         self.adjustPointerLB=(lSelected,bSelected)
         '''
         print("Adjusted element at ",self.adjustPointerLB)
@@ -238,7 +243,28 @@ class Model:
         else:
             print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
         '''
-        return oV
+        return (oV,adjE)
+    
+    def pollElement(self,idealE=None,adjLSpace=None,):
+        #Define target node
+        adjLSpace=adjLSpace or self.lSpace
+        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
+        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
+        #print("Adjusting at LB: ", self.adjustPointerLB)
+
+        shelf=self.bDict[lSelected][bSelected].pollElement(idealE=idealE)
+        oV=shelf[0]
+        adjE=shelf[1]
+        self.adjustPointerLB=(lSelected,bSelected)
+        '''
+        print("Adjusted element at ",self.adjustPointerLB)
+        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        else:
+            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+        '''
+        return (oV,adjE)
+
         
 
     def purgeLAE(self):
