@@ -41,5 +41,5 @@ for i in range(testcount):
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #testmodel.purgeLAE()
-        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountW=0.1,adjAmountB=0.1,stepsize=0.1,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False)
+        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountW=0.1,adjAmountB=0.1,batchCount=100,stepsize=0.1,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False)
         #print(testoutput)
