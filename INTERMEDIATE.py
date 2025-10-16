@@ -63,7 +63,7 @@ class Intermediate:
             #print(f"Batch Count: {batchCount}")
             batchStep=(adjRange[1]-adjRange[0])/batchCount
             #print(f"Batchstep: {batchStep}")
-            for i in range(batchCount):
+            for i in range(batchCount+1):
                 adjAmountList.append(adjRange[0]+(i*batchStep))
 
         #print(f"adjAmountList: {adjAmountList}")
@@ -93,7 +93,6 @@ class Intermediate:
             else:
                 modScore=self.algDict[scorerIndex[1]](inState,outStateMod)
             
-            modScoresList.append(modScore)
 
             #print("ModScoreAverage"," ",score2)
             #print("zeroScore: ",zeroScore)
@@ -106,6 +105,7 @@ class Intermediate:
             '''
             if ((adjE==1 and adjRangeW[0]>0) or (adjE==2 and adjRangeB[0]>0)) and dSU<0:
                 dSU=dSU*reverseScale
+            #revise this
             '''
             #print(dS," dS")
             dE=adjAmount
@@ -114,7 +114,11 @@ class Intermediate:
             if dE!=0 and dSU!=0:
                 grad=dSU/dE
                 modGradList.append(grad)
+                modScoresList.append(modScore)
+                
                 #finalAdjAmountList.append(adjAmount)
+                
+                #revise for formatting
             
             
 
@@ -137,9 +141,8 @@ class Intermediate:
                     step=step*min(abs(bounds[0]-(oV+step)),abs(bounds[1]-(oV+step)))#first find oV and stepscaled, then calculate the absolute distance from either Bound (Whichever is lower) iff value is between -1 and 1. If it isnt, normalize it to whichever of those values it's closest to.
             #print("Step", step)
             step2=step    #for testing
-            actualstep=step
-            #print("Actual Step ",actualstep)
-            self.mdlDict[opModelIndex].adjustElement(actualstep)
+            
+            self.mdlDict[opModelIndex].adjustElement(step)
 
 
             finalState=self.mdlDict[opModelIndex].runModel(inState)[1]
@@ -150,12 +153,12 @@ class Intermediate:
 
             backpropSuccess=True
             if finalScore<zeroScore:
-                self.mdlDict[opModelIndex].adjustElement(-actualstep)
+                self.mdlDict[opModelIndex].adjustElement(-step)
                 backpropSuccess=False
                 #print("Final adjustment test failed, undoing step")
 
             newV=self.mdlDict[opModelIndex].pollElement()[0]
-            backpropSummary=f"{iterationID}, success:{backpropSuccess} adjE: {adjE}, zeroScore:{zeroScore}, average score:{sum(modScoresList)/len(modScoresList)} oV:{oV} average grad:{sum(modGradList)/len(modGradList)}, step1:{step1} step2:{step2} actualStep:{actualstep} newV:{newV}\n"
+            backpropSummary=f"{iterationID}, success:{backpropSuccess} adjE: {adjE}, zeroScore:{zeroScore}, average score:{sum(modScoresList)/len(modScoresList)} oV:{oV} average grad:{sum(modGradList)/len(modGradList)}, step1:{step1} step2:{step2} actualStep:{step} newV:{newV}\n"
             #print(backpropSummary)
             with open("testdata.txt", "a") as f:
                 f.write(backpropSummary)
@@ -165,9 +168,9 @@ class Intermediate:
         #DEBUGGING
 
         else:
-            #print("Couldn't change value any more without exceeding bounds!")
+            #print("All attempted changes had no effect on score!")
             '''
-            backpropSummary=f"{iterationID}, backprop test failed across all tested scores.\n"
+            backpropSummary=f"{iterationID}, backprop test failed across all tested scores: no effect on gradient whatsoever.\n"
             print(backpropSummary)
             with open("testdata.txt", "a") as f:
                 f.write(backpropSummary)
