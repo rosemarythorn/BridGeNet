@@ -19,7 +19,8 @@ def testScorer(inState,outState):
     z=outState[3]
     return (1000/((w+x)*(2*(y-z))+(1000-x)))
 
-defaultBounds=(-8,8)
+defaultBounds=(-800,800)
+defaultInitialBounds=(-8,8)
 adjAmountW=0.01
 adjAmountB=0.01
 stepSize=0.01

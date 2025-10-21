@@ -15,12 +15,12 @@ class Intermediate:
         #scorerIndex is a dual index where element 0 is a boolean dictating True if the scorer is a model and False if it is handcoded.
         #second element of scorerIndex is just the key in mdlDict or algDict it's found at.
 
-        outState1=self.mdlDict[opModelIndex].runModel(inState)[1]
+        zeroOutState=self.mdlDict[opModelIndex].runModel(inState)[1]
         zeroScore=0
         if scorerIndex[0]:
-            zeroScore=self.mdlDict[scorerIndex[1]].runModel(inState+outState1)
+            zeroScore=self.mdlDict[scorerIndex[1]].runModel(inState+zeroOutState)
         else:
-            zeroScore=self.algDict[scorerIndex[1]](inState,outState1)
+            zeroScore=self.algDict[scorerIndex[1]](inState,zeroOutState)
 
         #ADD SCORING ENV SUPPORT LATER 
 
@@ -101,18 +101,20 @@ class Intermediate:
             #print(oV," oV")
 
             dS=(modScore-zeroScore)
-            dSU=dS/abs(zeroScore)        #loss
+            dS1=dS
+            #dS=dS/abs(zeroScore)
+            dS2=dS        #loss
             '''
-            if ((adjE==1 and adjRangeW[0]>0) or (adjE==2 and adjRangeB[0]>0)) and dSU<0:
-                dSU=dSU*reverseScale
+            if ((adjE==1 and adjRangeW[0]>0) or (adjE==2 and adjRangeB[0]>0)) and dS<0:
+                dS=dS*reverseScale
             #revise this
             '''
             #print(dS," dS")
             dE=adjAmount
             #print(dE," dE")
             grad=0
-            if dE!=0 and dSU!=0:
-                grad=dSU/dE
+            if dE!=0 and dS!=0:
+                grad=dS/dE
                 modGradList.append(grad)
                 modScoresList.append(modScore)
                 
@@ -177,9 +179,8 @@ class Intermediate:
             #currentlist.append((iterationID, zeroScore,zeroScore, Score2,score2, oV,oV, dS,dS, dE,dE, grad,grad, step1,step1, step2,step2, actualStep,actualstep, newV",newV))
             '''
             pass        
-
         self.mdlDict[opModelIndex].purgeLAE()
-        return outState1
+        return zeroOutState
         
 
         '''
