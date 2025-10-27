@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import algs
+import copy
 
 class Bridge:
     def __init__(self,weight, bias, actvFunc, startAddress, endAddress, layer):
@@ -82,11 +83,11 @@ class Bridge:
         self.adjPointerE=adjElement
         oV=0
         if adjElement==1:
-            oV=self.weight
+            oV=copy.deepcopy(self.weight)
             self.weight=adjAmount
             #print("Adjusted Weight by ",adjAmount)
         elif adjElement==2:
-            oV=self.bias
+            oV=copy.deepcopy(self.bias)
             self.bias=adjAmount
             #print("Adjusted Bias by ",adjAmount)
         elif adjElement==3:
@@ -98,6 +99,7 @@ class Bridge:
     
     def pollElement(self,idealE=None):
         adjElement=self.adjPointerE or idealE or random.randint(1,2)
+        algs.printToDeep(f"idealE: {idealE}, adjElement: {adjElement}\n")
         self.adjPointerE=adjElement
         oV=0
         if adjElement==1:
@@ -109,6 +111,7 @@ class Bridge:
         elif adjElement==3:
             oV=self.actvFunc
         #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
+        algs.printToDeep(f"oV: {oV}, intrinsic pointer: {self.adjPointerE}\n")
         return (oV,self.adjPointerE)
     
     

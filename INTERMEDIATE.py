@@ -3,6 +3,7 @@ import ENV
 import algs
 import random
 import pickle
+import copy
 
 class Intermediate:
     def __init__(self, mdlDict, envDict,algDict=algs.algsDict):
@@ -36,6 +37,7 @@ class Intermediate:
         for i in range(10):
             algs.printToDeep(f"Starting Backprop Step: Iteration ID {iterationID}\n")
         algs.printToDeep(f"\n")
+        algs.printToDeep(f"Initial Poll: {self.mdlDict[opModelIndex].pollElement()}\n")
 
         zeroOutState=self.mdlDict[opModelIndex].runModel(inState)[1]
         algs.printToDeep(f"zeroOutState: {zeroOutState}\n")
@@ -55,8 +57,14 @@ class Intermediate:
         #Adjusts and runs model
 
         pollShelf=self.mdlDict[opModelIndex].pollElement()
-        oV=pollShelf[0]
-        adjE=pollShelf[1]
+        algs.printToDeep(f"pollShelf: {pollShelf}\n")
+        oV=copy.deepcopy(pollShelf[0])
+
+        #Issue from here
+        
+        adjE=copy.deepcopy(pollShelf[1])
+        algs.printToDeep(f"Post adjE declare Poll: {self.mdlDict[opModelIndex].pollElement()}\n")
+
         algs.printToDeep(f"oV: {oV}\n")
         algs.printToDeep(f"adjE: {adjE}\n")
         modScore=0
@@ -75,14 +83,17 @@ class Intermediate:
             adjRange=adjRangeDef or adjRangeB
             adjAmount=adjAmountDef or adjAmountB
             bounds=boundsDef or bBounds
+        algs.printToDeep(f"Post weightorbias declare Poll: {self.mdlDict[opModelIndex].pollElement()}\n")
         
         algs.printToDeep(f"adjAmount: {adjAmount}, adjRange: {adjRange}, bounds: {bounds}\n")
         algs.printToDeep(f"\n")
-        
+        #to here
+        algs.printToDeep(f"Pre AdjListMake Poll: {self.mdlDict[opModelIndex].pollElement()}\n")
         adjAmountList=Intermediate.makeAdjAmountsList(batchCount,adjAmount,adjRange)
+        
 
         algs.printToDeep(f"List of Adjustments to test: {adjAmountList}\n")
-
+        algs.printToDeep(f"Pre Loop Poll: {self.mdlDict[opModelIndex].pollElement()}\n")
         algs.printToDeep(f"\n")
     
         for each in adjAmountList:
@@ -179,6 +190,7 @@ class Intermediate:
             algs.printToDeep(f"Step from stepsize {stepsize}: {step}\n")
             step1=step    #for testing
             #print("Step ",step)
+
             if oV+step>bounds[1]:
                 step=bounds[1]-oV
                 algs.printToDeep(f"target value {oV}+{step}={oV+step} exceeded upper bound {bounds[1]}\n")
@@ -198,6 +210,7 @@ class Intermediate:
                     #IMPORTANT: if using endpoint scaling, adjust to consider above-1 values of bound. otherwise, multiplies by a large value, distorting things
                     algs.printToDeep(f"Endpoint Scaling active, step after endpoint scaling: {step}\n")
             #print("Step", step)
+
             step2=step    #for testing
             
             self.mdlDict[opModelIndex].adjustElement(step)
@@ -210,13 +223,14 @@ class Intermediate:
             algs.printToDeep(f"Final OutState: {finalState}\n")
             if scorerIndex[0]:
                 finalScore=self.mdlDict[scorerIndex[1]].runModel(inState+finalState)
-                zeroScore=self.mdlDict[scorerIndex[1]].runModel(inState+zeroOutState+smuggle)
+                #zeroScore=self.mdlDict[scorerIndex[1]].runModel(inState+zeroOutState+smuggle)
                 algs.printToDeep(f"Model {scorerIndex[1]} as Scorer Used\n")
             else:
                 finalScore=self.algDict[scorerIndex[1]](inState,finalState,smuggle)
                 algs.printToDeep(f"Alg Scorer {scorerIndex[1]} used\n")
 
             algs.printToDeep(f"zeroScore: {zeroScore}\n")
+            algs.printToDeep(f"outputScore: {finalScore}\n")
 
             backpropSuccess=True
             if finalScore<zeroScore:
@@ -228,6 +242,8 @@ class Intermediate:
 
             newV=self.mdlDict[opModelIndex].pollElement()[0]
             algs.printToDeep(f"New Final Element State: {newV}\n")
+
+
             backpropSummary=f"{iterationID}, success:{backpropSuccess} adjE: {adjE}, zeroScore:{zeroScore}, average score:{sum(modScoresList)/len(modScoresList)} oV:{oV} average grad:{sum(modGradList)/len(modGradList)}, step1:{step1} step2:{step2} actualStep:{step} newV:{newV}\n"
             #print(backpropSummary)
             with open("shallowOut.txt", "a") as f:
@@ -248,6 +264,17 @@ class Intermediate:
             #currentlist.append((iterationID, zeroScore,zeroScore, Score2,score2, oV,oV, dS,dS, dE,dE, grad,grad, step1,step1, step2,step2, actualStep,actualstep, newV",newV))
             '''
             pass        
+        finalState=self.mdlDict[opModelIndex].runModel(inState)[1]
+        if scorerIndex[0]:
+            finalScore=self.mdlDict[scorerIndex[1]].runModel(inState+finalState)
+            zeroScore=self.mdlDict[scorerIndex[1]].runModel(inState+zeroOutState+smuggle)
+            algs.printToDeep(f"Model {scorerIndex[1]} as Scorer Used\n")
+        else:
+            finalScore=self.algDict[scorerIndex[1]](inState,finalState,smuggle)
+            algs.printToDeep(f"Alg Scorer {scorerIndex[1]} used\n")
+
+        algs.printToDeep(f"Resultant Final Test Score: {finalScore}\n")
+
         self.mdlDict[opModelIndex].purgeLAE()
         algs.printToDeep(f"Purged LAE\n")
         return zeroOutState

@@ -30,13 +30,14 @@ aSpace=(1,6)
 bCount=100
 testcount=10000
 nettime=0
-#testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
 
 with open("deepOut.txt", "w") as f:
         f.write("")
 with open("shallowOut.txt", "w") as f:
         f.write("")
+
 
 for i in range(testcount):
         #testmodel.adjustElement(0.001)
@@ -48,7 +49,9 @@ for i in range(testcount):
         #testmodel.purgeLAE()
         tickdown=abs(np.sin(i/20)/5)
         #tickdown=10**((-(i+1)/1000)+1)
+        #print(testmodel.pollElement())
         #print(tickdown)
-        print(i)
+        #print(i)
+        #print(testmodel.runModel((0,5,5,5,5,5,5,5)))
         testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountDef=0.1,adjRangeDef=(-2*tickdown,2*tickdown),batchCount=6,stepsize=tickdown,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False,ascent=True,scoreNormalize=True)
         #print(testoutput)

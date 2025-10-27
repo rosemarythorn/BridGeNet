@@ -26,7 +26,8 @@ class Model:
         self.wBounds=wBounds
         self.bBounds=bBounds
 
-        self.adjustPointerLB=(None,None)
+        self.adjPointerLB=[None,None]
+        
         
         if self.bRAW==None:
             shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
@@ -223,77 +224,83 @@ class Model:
         return (inState,outShelf)
     
 
+    def setTarget(self,adjLSpace):
+        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+        adjLSpace=adjLSpace or self.lSpace
+
+        if self.adjPointerLB[0]==None:
+            self.adjPointerLB[0]=random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
+        
+        
+        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+        
+        if self.adjPointerLB[1]==None:
+            self.adjPointerLB[1]=random.randrange(0,len(self.bDict[self.adjPointerLB[0]]))
+        
+        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+
     
-    def adjustElement(self,adjAmount=0.0001,idealE=None,adjLSpace=None,):
+    def adjustElement(self,adjAmountProvided=0.0001,idealE=None,adjLSpace=None):
 
         #Define target node
-        adjLSpace=adjLSpace or self.lSpace
-        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
-        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
-        #print("Adjusting at LB: ", self.adjustPointerLB)
+        self.setTarget(adjLSpace=adjLSpace)
+        #print("Adjusting at LB: ", self.adjPointerLB)
 
-        shelf=self.bDict[lSelected][bSelected].adjustElement(adjAmount=adjAmount,idealE=idealE)
+        shelf=self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjustElement(adjAmount=adjAmountProvided,idealE=idealE)
         oV=shelf[0]
         adjE=shelf[1]
-        self.adjustPointerLB=(lSelected,bSelected)
         '''
-        print("Adjusted element at ",self.adjustPointerLB)
-        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        print("Adjusted element at ",self.adjPointerLB)
+        if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
     
 
 
-    def setElement(self,adjAmount=0.0001,idealE=None,adjLSpace=None,):
+    def setElement(self,adjAmount=0,idealE=None,adjLSpace=None):
 
         #Define target node
-        adjLSpace=adjLSpace or self.lSpace
-        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
-        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
-        #print("Adjusting at LB: ", self.adjustPointerLB)
+        #print(type(self.adjPointerLB))
+        self.setTarget(adjLSpace=adjLSpace)
+        #print("Adjusting at LB: ", self.adjPointerLB)
 
-        shelf=self.bDict[lSelected][bSelected].setElement(adjAmount=adjAmount,idealE=idealE)
+        shelf=self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].setElement(adjAmount=adjAmount,idealE=idealE)
         oV=shelf[0]
         adjE=shelf[1]
-        self.adjustPointerLB=(lSelected,bSelected)
         '''
-        print("Adjusted element at ",self.adjustPointerLB)
-        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        print("Adjusted element at ",self.adjPointerLB)
+        if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
     
     def pollElement(self,idealE=None,adjLSpace=None):
         #Define target node
-        adjLSpace=adjLSpace or self.lSpace
-        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
-        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
-        #print("Adjusting at LB: ", self.adjustPointerLB)
+        self.setTarget(adjLSpace=adjLSpace)
 
-        shelf=self.bDict[lSelected][bSelected].pollElement(idealE=idealE)
+        shelf=self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].pollElement(idealE=idealE)
         oV=shelf[0]
         adjE=shelf[1]
-        self.adjustPointerLB=(lSelected,bSelected)
         '''
-        print("Adjusted element at ",self.adjustPointerLB)
-        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        print("Adjusted element at ",self.adjPointerLB)
+        if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
 
         
 
     def purgeLAE(self):
-        if self.adjustPointerLB!=(None,None):
-            self.bDict[self.adjustPointerLB[0]][self.adjustPointerLB[1]].purgeLAE()
-            self.adjustPointerLB=(None,None)
+        if self.adjPointerLB!=[None,None]:
+            self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].purgeLAE()
+            self.adjPointerLB=[None,None]
 
 
 
