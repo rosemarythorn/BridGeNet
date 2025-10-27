@@ -12,7 +12,7 @@ def sigmoid(x):
 def leakyReLU(x):
     return max(x,x/10)
 
-def testScorer(inState,outState):
+def testScorer(inState,outState,smuggle):
     w=outState[0]
     x=outState[1]
     y=outState[2]
@@ -33,3 +33,11 @@ algsDict={
     "leakyReLU": leakyReLU,
     "testScorer": testScorer
 }
+
+def printToDeep(inStr):
+     with open("deepOut.txt", "a") as f:
+                f.write(inStr)
+                
+def printToShallow(inStr):
+      with open("shallowOut.txt", "a") as f:
+                f.write(inStr)

@@ -77,6 +77,25 @@ class Bridge:
         #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
         return (oV,self.adjPointerE)
     
+    def setElement(self,adjAmount, idealE=None):
+        adjElement=self.adjPointerE or idealE or random.randint(1,2)
+        self.adjPointerE=adjElement
+        oV=0
+        if adjElement==1:
+            oV=self.weight
+            self.weight=adjAmount
+            #print("Adjusted Weight by ",adjAmount)
+        elif adjElement==2:
+            oV=self.bias
+            self.bias=adjAmount
+            #print("Adjusted Bias by ",adjAmount)
+        elif adjElement==3:
+            oV=self.actvFunc
+            self.actvFunc=adjAmount
+        #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
+        return (oV,self.adjPointerE)
+    
+    
     def pollElement(self,idealE=None):
         adjElement=self.adjPointerE or idealE or random.randint(1,2)
         self.adjPointerE=adjElement

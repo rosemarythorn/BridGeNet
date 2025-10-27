@@ -21,7 +21,7 @@ def printNDict(nDictinput):
 
 def generateTestMdlDict():
       mdlDict={
-        1:MODEL.Model(lSpace,aSpace,(1,2,3,4),(1,2,3,4,5,6),bCount=bCount)
+        1:MODEL.Model(lSpace,aSpace,(1,2,3,4),(1,2,3,4,5,6),bCount=bCount,wBounds=algs.defaultInitialBounds,bBounds=algs.defaultInitialBounds)
       }
       return mdlDict
 
@@ -30,8 +30,13 @@ aSpace=(1,6)
 bCount=100
 testcount=10000
 nettime=0
-testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+#testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
+
+with open("deepOut.txt", "w") as f:
+        f.write("")
+with open("shallowOut.txt", "w") as f:
+        f.write("")
 
 for i in range(testcount):
         #testmodel.adjustElement(0.001)
@@ -41,5 +46,9 @@ for i in range(testcount):
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #testmodel.purgeLAE()
-        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountW=0.1,adjAmountB=0.1,batchCount=100,stepsize=0.1*(i**1/100),flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False)
+        tickdown=abs(np.sin(i/20)/5)
+        #tickdown=10**((-(i+1)/1000)+1)
+        #print(tickdown)
+        print(i)
+        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountDef=0.1,adjRangeDef=(-2*tickdown,2*tickdown),batchCount=6,stepsize=tickdown,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False,ascent=True,scoreNormalize=True)
         #print(testoutput)

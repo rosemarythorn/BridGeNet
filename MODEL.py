@@ -245,7 +245,30 @@ class Model:
         '''
         return (oV,adjE)
     
-    def pollElement(self,idealE=None,adjLSpace=None,):
+
+
+    def setElement(self,adjAmount=0.0001,idealE=None,adjLSpace=None,):
+
+        #Define target node
+        adjLSpace=adjLSpace or self.lSpace
+        lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
+        bSelected=self.adjustPointerLB[1] or random.randrange(0,len(self.bDict[lSelected]))
+        #print("Adjusting at LB: ", self.adjustPointerLB)
+
+        shelf=self.bDict[lSelected][bSelected].setElement(adjAmount=adjAmount,idealE=idealE)
+        oV=shelf[0]
+        adjE=shelf[1]
+        self.adjustPointerLB=(lSelected,bSelected)
+        '''
+        print("Adjusted element at ",self.adjustPointerLB)
+        if type(self.bDict[lSelected][bSelected])==BRIDGE.Bridge:
+            print("Bridge in scope below adjusted, adjusted element ",self.bDict[lSelected][bSelected].adjPointerE)
+        else:
+            print("Model adjusted in scope below, Pointer ",self.bDict[lSelected][bSelected].adjustPointerLB)
+        '''
+        return (oV,adjE)
+    
+    def pollElement(self,idealE=None,adjLSpace=None):
         #Define target node
         adjLSpace=adjLSpace or self.lSpace
         lSelected=self.adjustPointerLB[0] or random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
