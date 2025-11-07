@@ -31,7 +31,7 @@ bCount=100
 testcount=10000
 nettime=0
 testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
-testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
+#testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
 
 with open("deepOut.txt", "w") as f:
         f.write("")
@@ -47,11 +47,28 @@ for i in range(testcount):
         #print(testmodel.adjustElement(-0.001))
         #print(testmodel.adjustElement(-0.001))
         #testmodel.purgeLAE()
-        tickdown=abs(np.sin(i/20)/5)
-        #tickdown=10**((-(i+1)/1000)+1)
+        #tickdown=abs(np.sin(i/20)/5)
+        #tickdown=2**((-((i+1)/5000)))
         #print(testmodel.pollElement())
         #print(tickdown)
+        #offset=random.random()*tickdown
         #print(i)
         #print(testmodel.runModel((0,5,5,5,5,5,5,5)))
-        testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountDef=0.1,adjRangeDef=(-2*tickdown,2*tickdown),batchCount=6,stepsize=tickdown,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False,ascent=True,scoreNormalize=True)
+        #testoutput=testinter.backprop((0,1,10),1,(False,"testScorer"),adjAmountDef=0.1,adjRangeDef=(-2*tickdown,2*tickdown),batchCount=6,stepsize=tickdown,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False,ascent=True,scoreNormalize=True)
+        #testoutput=testinter.sortOptim((0,1,10),1,(False,"testScorer"),adjAmountDef=0.1,adjRangeDef=((-2*tickdown)+offset,(2*tickdown)+offset),batchCount=3,flip=True,iterationID=i,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds,doEndpointScaling=False,ascent=True,scoreNormalize=True)
         #print(testoutput)
+        pass
+
+testmodel1=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+algs.printToDeep(f"{vars(testmodel1)}\n")
+testmodel2=MODEL.Model(5,((0,2),(1,3)),5,7,bCount=bCount)
+algs.printToDeep(f"{vars(testmodel2)}\n")
+testmodel3=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+algs.printToDeep(f"{vars(testmodel3)}\n")
+testmodel4=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+algs.printToDeep(f"{vars(testmodel4)}\n")
+testmodel5=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+algs.printToDeep(f"{vars(testmodel5)}\n")
+testmodel6=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+algs.printToDeep(f"{vars(testmodel6)}\n")
+#print(99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999)

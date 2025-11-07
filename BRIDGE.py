@@ -2,6 +2,7 @@ import numpy as np
 import random
 import algs
 import copy
+import configs
 
 class Bridge:
     def __init__(self,weight, bias, actvFunc, startAddress, endAddress, layer):
@@ -99,7 +100,7 @@ class Bridge:
     
     def pollElement(self,idealE=None):
         adjElement=self.adjPointerE or idealE or random.randint(1,2)
-        algs.printToDeep(f"idealE: {idealE}, adjElement: {adjElement}\n")
+        #algs.printToDeep(f"idealE: {idealE}, adjElement: {adjElement}\n")
         self.adjPointerE=adjElement
         oV=0
         if adjElement==1:
@@ -111,7 +112,7 @@ class Bridge:
         elif adjElement==3:
             oV=self.actvFunc
         #print("Adjusted element ",adjElement, " saved address ", self.adjPointerE)
-        algs.printToDeep(f"oV: {oV}, intrinsic pointer: {self.adjPointerE}\n")
+        #algs.printToDeep(f"oV: {oV}, intrinsic pointer: {self.adjPointerE}\n")
         return (oV,self.adjPointerE)
     
     
@@ -123,7 +124,7 @@ class Bridge:
 
 
     
-def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds):
+def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
     layer=layer or random.randrange(lSpace[0],lSpace[1])
     startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])    #makes 0 an invalid bridge address
     endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])

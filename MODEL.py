@@ -4,6 +4,7 @@ import numpy as np
 import time
 import multiprocessing
 import algs
+import configs
 import copy
 
 #Note: add submodel support into initialize functions
@@ -12,23 +13,128 @@ import copy
 
 
 class Model:
-    def __init__(self, lSpace, aSpace, inG, outG, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None,wBounds=algs.defaultBounds,bBounds=algs.defaultBounds):
+    def __init__(self, inG, outG,lSpace=configs.defaultLSpace, aSpace=configs.defaultASpaceLayer, maxKernelCount=1,kernelOuts=True, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
         self.bRAW=bRAW
         self.mdlDict=mdlDict
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
-        self.aSpace=aSpace
-        self.lSpace=lSpace     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
         self.outHandler=list()
-        self.lIn=lIn or self.lSpace[0]
-        self.lOut=lOut or self.lSpace[1]
-        self.inG=inG
-        self.outG=outG
         self.wBounds=wBounds
         self.bBounds=bBounds
-
+        self.kernelOuts=kernelOuts
+        self.maxKernelCount=maxKernelCount
         self.adjPointerLB=[None,None]
+
+
+        self.lSpace=None
+        #single endpoint provided
+        if type(lSpace)==int:
+            self.lSpace=(0,lSpace)
+        #Both endpoints provided
+        elif len(lSpace)==2:
+            self.lSpace=(lSpace[0],lSpace[1])     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
+        #Invalid
+        else:
+            print("lSpace entry is invalid: reverting to default")
+
+        self.aSpaceList=[]
+        #Single Endpoint provided
+        if type(aSpace)==int:
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                self.aSpaceList.append((0,aSpace))
+        #Both endpoints provided
+        elif type(aSpace[0])==int:
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                self.aSpaceList.append(tuple(aSpace))
+        #List of endpoints with size equal to number of layers
+        elif len(aSpace)==1+lSpace[1]-lSpace[0]:
+            for each in aSpace:
+                self.aSpaceList.append(each)
+        #Invalid Entry
+        else:
+            print("Invalid aSpace data format: defaulting to configs")
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                self.aSpaceList.append(configs.defaultASpaceLayer)
+            
+        self.aSpaceList=tuple(self.aSpaceList)
         
+
+        self.inGList=[]
+
+        #No inputs whatsoever
+        if inG==None:
+            pass
+        #single inG, single input
+        elif type(inG)==int:
+            self.inGList=[((inG,inG))]
+        #List of input targets which are also considered sources    
+        elif type(inG[0])==int:
+            self.inGList=[[]]
+            for i in range(len(inG)):
+                self.inGList[0].append((inG[i],inG[i]))
+        #list of pairs of sources and targets
+        elif type(inG[0][0])==int:
+            self.inGList=[[]]
+            for i in range(len(inG)):
+                self.inGList[0].append(tuple(inG[i]))
+        #list of inGs, each made of pairs of sources and targets
+        else:
+            for each in inG:
+                self.inGList.append(tuple(each))
+        self.inGList=tuple(self.inGList)
         
+
+        self.outGList=[]
+        #No inputs whatsoever
+        if outG==None:
+            pass
+        #single outG, single input
+        elif type(outG)==int:
+            self.outGList=[((outG,outG))]
+        #List of input targets which are also considered sources    
+        elif type(outG[0])==int:
+            self.outGList=[[]]
+            for i in range(len(outG)):
+                self.outGList[0].append((outG[i],outG[i]))
+        #list of pairs of sources and targets
+        elif type(outG[0][0])==int:
+            self.outGList=[[]]
+            for i in range(len(outG)):
+                self.outGList[0].append(tuple(outG[i]))
+        #list of outGs, each made of pairs of sources and targets
+        else:
+            for each in outG:
+                self.outGList.append(tuple(each))
+        self.outGList=tuple(self.outGList)
+
+
+
+        self.lInList=[]
+        #Single output layer
+        if type(lIn)==int:
+            for i in range(len(self.inGList)):
+                self.lInList.append(lIn)
+        #Multiple output layers, with count equal to size of inGList
+        elif type(lIn)!=None and len(lIn)==len(self.inGList):
+            self.lInList=tuple(lIn)
+        #Invalid or no specified answer provided
+        else:       
+            for i in range(len(self.inGList)):
+                self.lInList.append(self.lSpace[0])
+        self.lInList=tuple(self.lInlist)
+
+
+        self.lOutList=[]
+        if type(lOut)==int:
+            for i in range(len(self.outGList)):
+                self.lOutList.append(lOut)
+        elif type(lOut)!=None:
+            self.lOutList=lOut
+        else:
+            for i in range(len(self.outGList)):
+                self.lOutList.append(self.lSpace[1])
+        self.lOutList=tuple(self.lOutList)
+        
+        '''
         if self.bRAW==None:
             shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
             self.bDict=shelf[0]
@@ -48,6 +154,8 @@ class Model:
         self.nDict=self.makeNDict()
         #print(self.nDict)
         #print("Nodes Dict generated")
+    '''
+        
 
 
     def decomp(self,bRAW=None,lSpace=None,aSpace=None):
@@ -178,7 +286,7 @@ class Model:
             #Activation function
             if i!=lSpace[0]+1:
                 for i2 in opNDict[i]:
-                    opNDict[i][i2]=algs.leakyReLU(opNDict[i][i2])
+                    opNDict[i][i2]=algs.leakyReLU(opNDict[i][i2])   #Tinker with activ func
                     
 
             for each in bDict[i]:
@@ -225,19 +333,19 @@ class Model:
     
 
     def setTarget(self,adjLSpace):
-        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+        #algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
         adjLSpace=adjLSpace or self.lSpace
 
         if self.adjPointerLB[0]==None:
             self.adjPointerLB[0]=random.randrange(adjLSpace[0]+1,adjLSpace[1]+1)  #ALWAYS PREFER POINTER TO AVOID WEIRD ERRORS
         
         
-        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+        #algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
         
         if self.adjPointerLB[1]==None:
             self.adjPointerLB[1]=random.randrange(0,len(self.bDict[self.adjPointerLB[0]]))
         
-        algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
+        #algs.printToDeep(f"adjPointerLB: {self.adjPointerLB}\n")
 
     
     def adjustElement(self,adjAmountProvided=0.0001,idealE=None,adjLSpace=None):

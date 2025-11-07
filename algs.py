@@ -17,15 +17,12 @@ def testScorer(inState,outState,smuggle):
     x=outState[1]
     y=outState[2]
     z=outState[3]
-    return (1000/((w+x)*(2*(y-z))+(1000-x)))
+    denom=(w+x)*(2*(y-z))+(1000-x)
+    if denom!=0:
+        return (1000/denom)
+    else:
+        return 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 
-defaultBounds=(-800,800)
-defaultInitialBounds=(-8,8)
-adjAmountW=0.01
-adjAmountB=0.01
-stepSize=0.01
-adjRangeW=(-1,1)
-adjRangeB=(-1,1)
     
 algsDict={
     "Pass": Pass,
