@@ -124,10 +124,10 @@ class Bridge:
 
 
     
-def generateRandomBridge(lSpace,aSpace,layer=None,startAddress=None,endAddress=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
+def generateRandomBridge(lSpace=None,aSpaceList=None,layer=None,startAddress=None,endAddress=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
     layer=layer or random.randrange(lSpace[0],lSpace[1])
-    startAddress=startAddress or random.randrange(aSpace[0],aSpace[1])    #makes 0 an invalid bridge address
-    endAddress=endAddress or random.randrange(aSpace[0],aSpace[1])
+    startAddress=startAddress or random.randrange(aSpaceList[layer-1][0],aSpaceList[layer-1][1])    #makes 0 an invalid bridge address
+    endAddress=endAddress or random.randrange(aSpaceList[layer][0],aSpaceList[layer][1])
         
     return Bridge(random.uniform(wBounds[0],wBounds[1]),random.uniform(bBounds[0],bBounds[1]),0,startAddress,endAddress,layer)
 #for i in range(0,100):    

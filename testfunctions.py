@@ -30,7 +30,7 @@ aSpace=(1,6)
 bCount=100
 testcount=10000
 nettime=0
-testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+#testmodel=MODEL.Model(lSpace,aSpace,(0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 #testinter=INTERMEDIATE.Intermediate(generateTestMdlDict(),{},algs.algsDict)
 
 with open("deepOut.txt", "w") as f:
@@ -63,12 +63,16 @@ testmodel1=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 algs.printToDeep(f"{vars(testmodel1)}\n")
 testmodel2=MODEL.Model(5,((0,2),(1,3)),5,7,bCount=bCount)
 algs.printToDeep(f"{vars(testmodel2)}\n")
-testmodel3=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+testmodel3=MODEL.Model((((7,2),(4,5),(3,1)),((7,2),(4,5),(3,1))),(0,1,2,3,4,5),lSpace=[0,9],aSpace="Alpha",bCount=bCount)
 algs.printToDeep(f"{vars(testmodel3)}\n")
-testmodel4=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+testmodel4=MODEL.Model(None,77,(0,3,5),((6,9),(4,5),(3,2)),bCount=bCount)
 algs.printToDeep(f"{vars(testmodel4)}\n")
-testmodel5=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
+testmodel5=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),subModels=((2,testmodel3),),bCount=bCount)
 algs.printToDeep(f"{vars(testmodel5)}\n")
+print(testmodel5.bDict)
 testmodel6=MODEL.Model((0,1,2,3),(0,1,2,3,4,5),bCount=bCount)
 algs.printToDeep(f"{vars(testmodel6)}\n")
 #print(99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999)
+
+testval=((("Games"),),)
+print(testval)

@@ -8,3 +8,4 @@ adjAmountB=0.01
 stepSize=0.01
 adjRangeW=(-1,1)
 adjRangeB=(-1,1)
+defaultBCount=99999999999999

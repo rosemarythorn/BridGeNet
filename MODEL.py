@@ -13,7 +13,8 @@ import copy
 
 
 class Model:
-    def __init__(self, inG, outG,lSpace=configs.defaultLSpace, aSpace=configs.defaultASpaceLayer, maxKernelCount=1,kernelOuts=True, lIn=None,lOut=None,bRAW=None,bCount=None,mdlDict=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
+    def __init__(self, inG, outG,lSpace=configs.defaultLSpace, aSpace=configs.defaultASpaceLayer, maxKernelCount=1,kernelOuts=True, lIn=None,lOut=None,subModels=(),bRAW=None,bCount=None,mdlDict=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
+        #Submodels input example format:((layer, submodel),(layer,submodel),etc)
         self.bRAW=bRAW
         self.mdlDict=mdlDict
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
@@ -25,121 +26,29 @@ class Model:
         self.adjPointerLB=[None,None]
 
 
-        self.lSpace=None
-        #single endpoint provided
-        if type(lSpace)==int:
-            self.lSpace=(0,lSpace)
-        #Both endpoints provided
-        elif len(lSpace)==2:
-            self.lSpace=(lSpace[0],lSpace[1])     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
-        #Invalid
-        else:
-            print("lSpace entry is invalid: reverting to default")
 
-        self.aSpaceList=[]
-        #Single Endpoint provided
-        if type(aSpace)==int:
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
-                self.aSpaceList.append((0,aSpace))
-        #Both endpoints provided
-        elif type(aSpace[0])==int:
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
-                self.aSpaceList.append(tuple(aSpace))
-        #List of endpoints with size equal to number of layers
-        elif len(aSpace)==1+lSpace[1]-lSpace[0]:
-            for each in aSpace:
-                self.aSpaceList.append(each)
-        #Invalid Entry
-        else:
-            print("Invalid aSpace data format: defaulting to configs")
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
-                self.aSpaceList.append(configs.defaultASpaceLayer)
-            
-        self.aSpaceList=tuple(self.aSpaceList)
+        self.lSpace=self.formLSpace(lSpace)
+
+        self.bCountList=self.formBCountList(self.lSpace,bCount)
+
+        self.aSpaceList=self.formASpaceList(aSpace,self.lSpace)
         
-
-        self.inGList=[]
-
-        #No inputs whatsoever
-        if inG==None:
-            pass
-        #single inG, single input
-        elif type(inG)==int:
-            self.inGList=[((inG,inG))]
-        #List of input targets which are also considered sources    
-        elif type(inG[0])==int:
-            self.inGList=[[]]
-            for i in range(len(inG)):
-                self.inGList[0].append((inG[i],inG[i]))
-        #list of pairs of sources and targets
-        elif type(inG[0][0])==int:
-            self.inGList=[[]]
-            for i in range(len(inG)):
-                self.inGList[0].append(tuple(inG[i]))
-        #list of inGs, each made of pairs of sources and targets
-        else:
-            for each in inG:
-                self.inGList.append(tuple(each))
-        self.inGList=tuple(self.inGList)
+        self.inGList=self.formInGList(inG)
         
+        self.outGList=self.formOutGList(outG)
 
-        self.outGList=[]
-        #No inputs whatsoever
-        if outG==None:
-            pass
-        #single outG, single input
-        elif type(outG)==int:
-            self.outGList=[((outG,outG))]
-        #List of input targets which are also considered sources    
-        elif type(outG[0])==int:
-            self.outGList=[[]]
-            for i in range(len(outG)):
-                self.outGList[0].append((outG[i],outG[i]))
-        #list of pairs of sources and targets
-        elif type(outG[0][0])==int:
-            self.outGList=[[]]
-            for i in range(len(outG)):
-                self.outGList[0].append(tuple(outG[i]))
-        #list of outGs, each made of pairs of sources and targets
-        else:
-            for each in outG:
-                self.outGList.append(tuple(each))
-        self.outGList=tuple(self.outGList)
+        self.lInList=self.formLInList(lIn,self.inGList,self.lSpace)
 
+        self.lOutList=self.formLOutList(lOut,self.outGList,self.lSpace)
 
-
-        self.lInList=[]
-        #Single output layer
-        if type(lIn)==int:
-            for i in range(len(self.inGList)):
-                self.lInList.append(lIn)
-        #Multiple output layers, with count equal to size of inGList
-        elif type(lIn)!=None and len(lIn)==len(self.inGList):
-            self.lInList=tuple(lIn)
-        #Invalid or no specified answer provided
-        else:       
-            for i in range(len(self.inGList)):
-                self.lInList.append(self.lSpace[0])
-        self.lInList=tuple(self.lInlist)
-
-
-        self.lOutList=[]
-        if type(lOut)==int:
-            for i in range(len(self.outGList)):
-                self.lOutList.append(lOut)
-        elif type(lOut)!=None:
-            self.lOutList=lOut
-        else:
-            for i in range(len(self.outGList)):
-                self.lOutList.append(self.lSpace[1])
-        self.lOutList=tuple(self.lOutList)
         
-        '''
+        
         if self.bRAW==None:
-            shelf=self.generateBridges(lSpace=self.lSpace,aSpace=self.aSpace)
+            shelf=self.generateBridges(lSpace=self.lSpace,aSpaceList=self.aSpaceList)
             self.bDict=shelf[0]
             self.bDictUnsorted=self.bDict
             self.bDictAddressPairs=shelf[1]
+            self.bDictAddressPairsFull=shelf[2]
         else:
             self.bDictUnsorted=self.decomp()
             self.bDict=self.vCheck()
@@ -154,8 +63,154 @@ class Model:
         self.nDict=self.makeNDict()
         #print(self.nDict)
         #print("Nodes Dict generated")
-    '''
         
+        
+
+    def formLSpace(self,lSpace):
+        lSpaceOp=None
+        #single endpoint provided
+        if type(lSpace)==int:
+            lSpaceOp=(0,lSpace)
+        #Both endpoints provided
+        elif len(lSpace)==2:
+            lSpaceOp=(lSpace[0],lSpace[1])     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
+        #Invalid
+        else:
+            print("lSpace entry is invalid: reverting to default")
+            lSpaceOp=configs.defaultLSpace
+        return lSpaceOp
+    
+    def formBCountList(self,lSpace,bCount):
+        bCountList=[0]
+        if type(bCount)==int:
+            for i in range(lSpace[0]+1,lSpace[1]+1):
+                bCountList.append(bCount)
+        elif type(bCount)==None:
+            for i in range(lSpace[0]+1,lSpace[1]+1):
+                bCountList.append(configs.defaultBCount)
+        elif len(bCount)==(1+lSpace[1]-lSpace[0]):
+            for each in bCount:
+                bCountList.append(each)
+        return(bCountList)
+            
+
+    def formASpaceList(self,aSpace,lSpace=None):
+        lSpace=lSpace or self.lSpace
+        aSpaceList=[]
+        #Single Endpoint provided
+        if type(aSpace)==int:
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                aSpaceList.append((0,aSpace))
+        #Both endpoints provided
+        elif type(aSpace[0])==int:
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                aSpaceList.append(tuple(aSpace))
+        #List of endpoints with size equal to number of layers
+        elif len(aSpace)==1+lSpace[1]-lSpace[0]:
+            for each in aSpace:
+                aSpaceList.append(each)
+        #Invalid Entry
+        else:
+            print("Invalid aSpace data format: defaulting to configs")
+            for i in range(self.lSpace[0],self.lSpace[1]+1):
+                aSpaceList.append(configs.defaultASpaceLayer)
+        aSpaceList=tuple(aSpaceList)
+        return aSpaceList
+    
+    def formInGList(self,inG):
+        inGList=[]
+        #No inputs whatsoever
+        if inG==None:
+            pass
+        #single inG, single input
+        elif type(inG)==int:
+            inGList=(((inG,inG),),)
+        #List of input targets which are also considered sources    
+        elif type(inG[0])==int:
+            inGList=[[],]
+            for i in range(len(inG)):
+                inGList[0].append((inG[i],inG[i]),)
+            inGList[0]=tuple(inGList[0])
+        #list of pairs of sources and targets
+        elif type(inG[0][0])==int:
+            inGList=[[],]
+            for i in range(len(inG)):
+                inGList[0].append(tuple(inG[i]),)
+            inGList[0]=tuple(inGList[0])
+        #list of inGs, each made of pairs of sources and targets
+        else:
+            for each in inG:
+                inGList.append(tuple(each))
+        inGList=tuple(inGList)
+        return inGList
+
+    def formOutGList(self,outG):
+        outGList=[]
+        #No inputs whatsoever
+        if outG==None:
+            pass
+        #single outG, single input
+        elif type(outG)==int:
+            outGList=(((outG,outG),),)
+        #List of input targets which are also considered sources    
+        elif type(outG[0])==int:
+            outGList=[[]]
+            for i in range(len(outG)):
+                outGList[0].append((outG[i],outG[i]))
+            outGList[0]=tuple(outGList[0])
+        #list of pairs of sources and targets
+        elif type(outG[0][0])==int:
+            outGList=[[],]
+            for i in range(len(outG)):
+                outGList[0].append(tuple(outG[i]))
+            outGList[0]=tuple(outGList[0])
+        #list of outGs, each made of pairs of sources and targets
+        else:
+            for each in outG:
+                outGList.append(tuple(each))
+        outGList=tuple(outGList)
+        return outGList
+
+    def formLInList(self,lIn,inGList,lSpace):
+        inGList=inGList or self.inGList
+        lSpace=lSpace or self.lSpace
+        lInList=[]
+        #Single output layer
+        if type(lIn)==int:
+            for i in range(len(inGList)):
+                lInList.append(lIn)
+        #Multiple output layers, with count equal to size of inGList
+        elif lIn!=None:
+            if len(lIn)==len(inGList):
+                lInList=tuple(lIn)
+        #Invalid or no specified answer provided
+        else:       
+            for i in range(len(inGList)):
+                lInList.append(lSpace[0])
+        lInList=tuple(lInList)
+        return lInList
+
+    def formLOutList(self,lOut,outGList=None,lSpace=None):
+        lSpace=lSpace or self.lSpace
+        outGList=outGList or self.outGList
+        
+        lOutList=[]
+        #Single output layer
+        if type(lOut)==int:
+            for i in range(len(outGList)):
+                lOutList.append(lOut)
+        #Multiple output layers, with count equal to size of outGList
+        elif lOut!=None:
+            if len(lOut)==len(outGList):
+                lOutList=tuple(lOut)
+        #Invalid or no specified answer provided
+        else:       
+            for i in range(len(outGList)):
+                lOutList.append(lSpace[0])
+        lOutList=tuple(lOutList)
+        return lOutList
+    
+    
 
 
     def decomp(self,bRAW=None,lSpace=None,aSpace=None):
@@ -173,40 +228,92 @@ class Model:
                 bDictUnsorted[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i))
         
         
-    def generateBridges(self,lSpace=None,aSpace=None,wBounds=None,bBounds=None):
+    def generateBridges(self,lSpace=None,aSpaceList=None,wBounds=None,bBounds=None,subModels=(),bCountList=None):
         bDictAddressPairs={}
         wBounds=wBounds or self.wBounds
         bBounds=bBounds or self.bBounds
+        if bCountList==None:
+            bCountList=self.bCountList
+        else:
+            bCountList=self.formBCountList(self.lSpace,bCountList) 
         bDict={}
         lSpace=lSpace or self.lSpace
-        aSpace=aSpace or self.aSpace
+        aSpaceList=aSpaceList or self.aSpaceList
 
         #Initializes empty lists for all Valid operative Addresses
         for i in range(lSpace[0]+1,lSpace[1]+1):  #goes from 1 layer above lSpace[0] to final element lSpace[1]+1
-            bDict[i]=list()
-            bDictAddressPairs[i]=list()
+            bDict[i]=[]
+            bDictAddressPairs[i]=[]
         
-        bCountMax=(self.aSpace[1]-self.aSpace[0])**2
-        if self.bCount>bCountMax:
-            self.bCount=bCountMax
-            print("More bridges requested than number of valid address pair combinations within scope: bridge count lowered to prevent repeats")
+        shelf=Model.addSubmodels(bDict,subModels,bDictAddressPairs,aSpaceList)
+        bDict=shelf[0]
+        bDictAddressPairs=shelf[1]
+        bDictAddressPairsFull=shelf[2]
         
-        for i in range(lSpace[0]+1,lSpace[1]+1): #does not generate bridges originating on the first layer, since yknow. that would cause problems.
-            for i2 in range(0,self.bCount):
+
+        
+            
+        for L in range(lSpace[0]+1,lSpace[1]+1): #does not generate bridges originating on the first layer, since yknow. that would cause problems.
+            bCountMax=(self.aSpaceList[L][1]-self.aSpaceList[L][0])**2
+            print(f"bcount prior to adjustment: {bCountList[L]}")
+            if bCountList[L]>bCountMax-len(bDictAddressPairs):
+                bCountList[L]=bCountMax-len(bDictAddressPairs)
+                print("More bridges requested than number of valid address pair combinations within scope: bridge count lowered to prevent repeats")
+            print(f"number of bridges to be generated: {bCountList[L]}, bCountMax before adjustment {bCountMax}")
+            for i2 in range(0,bCountList[L]):
                 startAddress=0
                 endAddress=0
                 keepgoing=True
                 while keepgoing:
-                    startAddress=random.randint(aSpace[0],aSpace[1])
-                    endAddress=random.randint(aSpace[0],aSpace[1])
-                    if (startAddress,endAddress) not in bDictAddressPairs[i]:
+                    startAddress=random.randint(aSpaceList[L-1][0],aSpaceList[L-1][1])
+                    endAddress=random.randint(aSpaceList[L][0],aSpaceList[L][1])
+                    if (startAddress,endAddress) not in bDictAddressPairs[L]:
                         keepgoing=False
                     #else:
                         #print("Bridge #",i2," attempt deleted from nodes ",startAddress," to ",endAddress, " in layer ",i)
-                bDict[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i,startAddress=startAddress,endAddress=endAddress,wBounds=wBounds,bBounds=bBounds))
-                bDictAddressPairs[i].append((startAddress,endAddress))
+                bDict[L].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpaceList=aSpaceList,layer=L,startAddress=startAddress,endAddress=endAddress,wBounds=wBounds,bBounds=bBounds))
+                bDictAddressPairs[L].append((startAddress,endAddress))
+                bDictAddressPairsFull[L].append((startAddress,endAddress))
                 #print("Bridge #",i2," generated from nodes ",startAddress," to ",endAddress, " in layer ",i)
-        return (bDict,bDictAddressPairs)
+        return (bDict,bDictAddressPairs,bDictAddressPairsFull)
+    
+    
+    def addSubmodels(bDict,subModels,bDictAddressPairs,aSpaceList):
+        bDictAddressPairsFull=copy.deepcopy(bDictAddressPairs)
+        for each in subModels:
+            bDict[each[0]].append(each)
+            modelAddressesInPre=[]
+            modelAddressesOutPre=[]
+            modelAddressesInPost=[]
+            modelAddressesOutPost=[]
+            for each2 in each[1].inGList:
+                #each2 is an individual inG
+                for each3 in each2:
+                    #each3 is an individual pair of source-target
+                    modelAddressesInPre.append(each3[0])
+            kernelSizeIn=1+max(modelAddressesInPre)-min(modelAddressesInPre)
+            for i in range(each[1].maxKernelCount):
+                for each2 in modelAddressesInPre:
+                    modelAddressesInPost.append(each2+(i*kernelSizeIn))
+            
+            for each2 in each[1].outGList:
+                #each2 is an individual outG
+                for each3 in each2:
+                    #each3 is an individual pair of source-target
+                    modelAddressesOutPre.append(each3[1])
+            kernelSizeOut=1+max(modelAddressesOutPre)-min(modelAddressesOutPre)
+            for i in range(each[1].maxKernelCount):
+                for each2 in modelAddressesOutPre:
+                    modelAddressesOutPost.append(each2+(i*kernelSizeOut))
+
+
+            for each2 in modelAddressesInPost:
+                for each3 in modelAddressesOutPost:
+                    bDictAddressPairsFull[each[0]].append([each2,each3])
+                    if (each2>=aSpaceList[each[0]-1] and each2<=aSpaceList[each[0]-1]) and (each2>=aSpaceList[each[0]] and each2<=aSpaceList[each[0]]):
+                        bDictAddressPairs[each[0]].append([each2,each3])
+        return (bDict,bDictAddressPairs,bDictAddressPairsFull)
+
     
     def generateAddressPairs(self,lSpace=None,aSpace=None,bDict=None):
         bDict=bDict or self.bDict
