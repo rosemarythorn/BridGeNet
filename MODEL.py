@@ -15,6 +15,7 @@ import copy
 class Model:
     def __init__(self, inG, outG,lSpace=configs.defaultLSpace, aSpace=configs.defaultASpaceLayer, maxKernelCount=1,kernelOuts=True, lIn=None,lOut=None,subModels=(),bRAW=None,bCount=None,mdlDict=None,wBounds=configs.defaultBounds,bBounds=configs.defaultBounds):
         #Submodels input example format:((layer, submodel),(layer,submodel),etc)
+        self.subModels=subModels
         self.bRAW=bRAW
         self.mdlDict=mdlDict
         self.bCount=bCount   #for generating a new model from scratch when one is not provided
@@ -53,16 +54,16 @@ class Model:
             self.bDictUnsorted=self.decomp()
             self.bDict=self.vCheck()
             self.bDictAddressPairs=self.generateAddressPairs()
-        #print(self.bDictUnsorted)
-        #print("bDict Unsorted Generated")
-        #print(self.bDict)
-        #print("bDict zoned to only include addresses within aSpace and lSpace")
+        #algs.printToDeep(self.bDictUnsorted)
+        #algs.printToDeep("bDict Unsorted Generated")
+        #algs.printToDeep(self.bDict)
+        #algs.printToDeep("bDict zoned to only include addresses within aSpace and lSpace")
         self.aDict=self.coallateAddresses()
-        #print(self.aDict)
-        #print("Addresses coallated")
+        #algs.printToDeep(self.aDict)
+        #algs.printToDeep("Addresses coallated")
         self.nDict=self.makeNDict()
-        #print(self.nDict)
-        #print("Nodes Dict generated")
+        #algs.printToDeep(self.nDict)
+        #algs.printToDeep("Nodes Dict generated")
         
         
 
@@ -76,17 +77,17 @@ class Model:
             lSpaceOp=(lSpace[0],lSpace[1])     #lSpace[0] should never have elements to run on it.lSpace[1] is final layer, and thus should be included in calculations before export
         #Invalid
         else:
-            print("lSpace entry is invalid: reverting to default")
+            algs.printToDeep("lSpace entry is invalid: reverting to default")
             lSpaceOp=configs.defaultLSpace
         return lSpaceOp
     
     def formBCountList(self,lSpace,bCount):
         bCountList=[0]
         if type(bCount)==int:
-            for i in range(lSpace[0]+1,lSpace[1]+1):
+            for L in range(lSpace[0]+1,lSpace[1]+1):
                 bCountList.append(bCount)
         elif type(bCount)==None:
-            for i in range(lSpace[0]+1,lSpace[1]+1):
+            for L in range(lSpace[0]+1,lSpace[1]+1):
                 bCountList.append(configs.defaultBCount)
         elif len(bCount)==(1+lSpace[1]-lSpace[0]):
             for each in bCount:
@@ -99,11 +100,11 @@ class Model:
         aSpaceList=[]
         #Single Endpoint provided
         if type(aSpace)==int:
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
+            for L in range(self.lSpace[0],self.lSpace[1]+1):
                 aSpaceList.append((0,aSpace))
         #Both endpoints provided
         elif type(aSpace[0])==int:
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
+            for L in range(self.lSpace[0],self.lSpace[1]+1):
                 aSpaceList.append(tuple(aSpace))
         #List of endpoints with size equal to number of layers
         elif len(aSpace)==1+lSpace[1]-lSpace[0]:
@@ -111,8 +112,8 @@ class Model:
                 aSpaceList.append(each)
         #Invalid Entry
         else:
-            print("Invalid aSpace data format: defaulting to configs")
-            for i in range(self.lSpace[0],self.lSpace[1]+1):
+            algs.printToDeep("Invalid aSpace data format: defaulting to configs")
+            for L in range(self.lSpace[0],self.lSpace[1]+1):
                 aSpaceList.append(configs.defaultASpaceLayer)
         aSpaceList=tuple(aSpaceList)
         return aSpaceList
@@ -216,19 +217,21 @@ class Model:
     def decomp(self,bRAW=None,lSpace=None,aSpace=None):
         bRAW=bRAW or self.bRAW
         lSpace=lSpace or self.lSpace
-        aSpace=aSpace or self.aSpace
+        aSpaceList=aSpaceList or self.aSpaceList
         
 
         #Add later once i figure out the storage method for compiled bridges
         bDictUnsorted={}
 
-        for i in range(lSpace[0]+1,lSpace[1]+1):
-            bDictUnsorted[i]=list()
+        for L in range(lSpace[0]+1,lSpace[1]+1):
+            bDictUnsorted[L]=list()
             for i2 in range(0,self.bCount):
-                bDictUnsorted[i].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpace,layer=i))
+                bDictUnsorted[L].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpace=aSpaceList[L],layer=L))
         
         
-    def generateBridges(self,lSpace=None,aSpaceList=None,wBounds=None,bBounds=None,subModels=(),bCountList=None):
+    def generateBridges(self,lSpace=None,aSpaceList=None,wBounds=None,bBounds=None,subModels=None,bCountList=None):
+        if subModels==None:
+            subModels=self.subModels
         bDictAddressPairs={}
         wBounds=wBounds or self.wBounds
         bBounds=bBounds or self.bBounds
@@ -241,9 +244,9 @@ class Model:
         aSpaceList=aSpaceList or self.aSpaceList
 
         #Initializes empty lists for all Valid operative Addresses
-        for i in range(lSpace[0]+1,lSpace[1]+1):  #goes from 1 layer above lSpace[0] to final element lSpace[1]+1
-            bDict[i]=[]
-            bDictAddressPairs[i]=[]
+        for L in range(lSpace[0]+1,lSpace[1]+1):  #goes from 1 layer above lSpace[0] to final element lSpace[1]+1
+            bDict[L]=[]
+            bDictAddressPairs[L]=[]
         
         shelf=Model.addSubmodels(bDict,subModels,bDictAddressPairs,aSpaceList)
         bDict=shelf[0]
@@ -254,12 +257,14 @@ class Model:
         
             
         for L in range(lSpace[0]+1,lSpace[1]+1): #does not generate bridges originating on the first layer, since yknow. that would cause problems.
-            bCountMax=(self.aSpaceList[L][1]-self.aSpaceList[L][0])**2
-            print(f"bcount prior to adjustment: {bCountList[L]}")
-            if bCountList[L]>bCountMax-len(bDictAddressPairs):
-                bCountList[L]=bCountMax-len(bDictAddressPairs)
-                print("More bridges requested than number of valid address pair combinations within scope: bridge count lowered to prevent repeats")
-            print(f"number of bridges to be generated: {bCountList[L]}, bCountMax before adjustment {bCountMax}")
+            bCountMax=(1+self.aSpaceList[L][1]-self.aSpaceList[L][0])**2
+            algs.printToDeep(f"\nGenerating Bridges for layer {L}")
+            algs.printToDeep(f"\nbcount prior to adjustment: {bCountList[L]}, bDictAddressPairs {bDictAddressPairs}")
+            algs.printToDeep(f"\nbDictAddressPairs Slice {bDictAddressPairs[L]}")
+            if bCountList[L]>bCountMax-len(bDictAddressPairs[L]):
+                bCountList[L]=bCountMax-len(bDictAddressPairs[L])
+                algs.printToDeep("More bridges requested than number of valid address pair combinations within scope: bridge count lowered to prevent repeats")
+            algs.printToDeep(f"\nnumber of bridges to be generated: {bCountList[L]}, bCountMax before adjustment {bCountMax}")
             for i2 in range(0,bCountList[L]):
                 startAddress=0
                 endAddress=0
@@ -270,11 +275,11 @@ class Model:
                     if (startAddress,endAddress) not in bDictAddressPairs[L]:
                         keepgoing=False
                     #else:
-                        #print("Bridge #",i2," attempt deleted from nodes ",startAddress," to ",endAddress, " in layer ",i)
+                        #algs.printToDeep("Bridge #",i2," attempt deleted from nodes ",startAddress," to ",endAddress, " in layer ",L)
                 bDict[L].append(BRIDGE.generateRandomBridge(lSpace=lSpace,aSpaceList=aSpaceList,layer=L,startAddress=startAddress,endAddress=endAddress,wBounds=wBounds,bBounds=bBounds))
                 bDictAddressPairs[L].append((startAddress,endAddress))
                 bDictAddressPairsFull[L].append((startAddress,endAddress))
-                #print("Bridge #",i2," generated from nodes ",startAddress," to ",endAddress, " in layer ",i)
+                #algs.printToDeep("Bridge #",i2," generated from nodes ",startAddress," to ",endAddress, " in layer ",L)
         return (bDict,bDictAddressPairs,bDictAddressPairsFull)
     
     
@@ -282,6 +287,7 @@ class Model:
         bDictAddressPairsFull=copy.deepcopy(bDictAddressPairs)
         for each in subModels:
             bDict[each[0]].append(each)
+            algs.printToDeep(f"\nbDict added {each} at {each[0]}, now {bDict}\n")
             modelAddressesInPre=[]
             modelAddressesOutPre=[]
             modelAddressesInPost=[]
@@ -310,21 +316,21 @@ class Model:
             for each2 in modelAddressesInPost:
                 for each3 in modelAddressesOutPost:
                     bDictAddressPairsFull[each[0]].append([each2,each3])
-                    if (each2>=aSpaceList[each[0]-1] and each2<=aSpaceList[each[0]-1]) and (each2>=aSpaceList[each[0]] and each2<=aSpaceList[each[0]]):
+                    if (each2>=aSpaceList[each[0]-1][0] and each2<=aSpaceList[each[0]-1][1]) and (each2>=aSpaceList[each[0]][0] and each2<=aSpaceList[each[0]][1]):
                         bDictAddressPairs[each[0]].append([each2,each3])
         return (bDict,bDictAddressPairs,bDictAddressPairsFull)
 
     
-    def generateAddressPairs(self,lSpace=None,aSpace=None,bDict=None):
+    def generateAddressPairs(self,lSpace=None,aSpaceList=None,bDict=None):
         bDict=bDict or self.bDict
         lSpace=lSpace or self.lSpace
-        aSpace=aSpace or self.aSpace
+        aSpaceList=aSpaceList or self.aSpaceList
         
         bDictAddressPairs={}
-        for i in range(lSpace[0],lSpace[1]):
-            bDictAddressPairs[i]=list()
-            for each in bDict[i]:
-                bDictAddressPairs[i].append((each.startAddress, each.endAddress))
+        for L in range(lSpace[0],lSpace[1]+1):
+            bDictAddressPairs[L]=list()
+            for each in bDict[L]:
+                bDictAddressPairs[L].append((each.startAddress, each.endAddress))
         return bDictAddressPairs
 
 
@@ -334,37 +340,58 @@ class Model:
         lSpace=lSpace or self.lSpace
         aSpace=aSpace or self.aSpace
         shelf={}
-        for i in range(lSpace[0],lSpace[1]+1):
-            shelf[i]=list()
-        for i in range(lSpace[0],lSpace[1]+1):
-            for each in bDictUnsorted[i]:
+        for L in range(lSpace[0],lSpace[1]+1):
+            shelf[L]=list()
+        for L in range(lSpace[0],lSpace[1]+1):
+            for each in bDictUnsorted[L]:
                 #allows for premature terminations of check if any condition is found to be false to save on performance
                 if each.startAddress>=aSpace[0] and each.startAddress<=aSpace[1] and each.endAddress>=aSpace[0] and each.endAddress<=aSpace[1] and each.layer>=lSpace[0] and each.layer<lSpace[1]:
-                    shelf[i].append(each)
+                    shelf[L].append(each)
         return shelf
 
 
 
-    def coallateAddresses(self,bDict=None,lSpace=None,inG=None,outG=None,lIn=None, lOut=None):
+    def coallateAddresses(self,bDict=None,lSpace=None,inGList=None,outGList=None,lInList=None, lOutList=None):
         bDict=bDict or self.bDict
         lSpace=lSpace or self.lSpace
-        inG=inG or self.inG
-        outG=outG or self.outG
-        lIn=lIn or self.lIn
-        lOut=lOut or self.lOut
+        inGList=inGList or self.inGList
+        outGList=outGList or self.outGList
+        lInList=lInList or self.lInList
+        lOutList=lOutList or self.lOutList
         
         shelf={}
-        for i in range(lSpace[0],lSpace[1]+1):
-            shelf[i]=set()
-            #print(shelf)
-        for i in range(lSpace[0]+1,lSpace[1]+1):
-            for each in bDict[i]:
-                shelf[i-1].add(each.startAddress)
-                shelf[i].add(each.endAddress)
-        for each in outG:
-            shelf[lOut].add(each)
-        for each in inG:
-            shelf[lIn].add(each)
+        for L in range(lSpace[0],lSpace[1]+1):
+            shelf[L]=set()
+            #algs.printToDeep(shelf)
+        for L in range(lSpace[0]+1,lSpace[1]+1):
+            for each in bDict[L]:
+                if type(each)==BRIDGE.Bridge:
+                    shelf[L-1].add(each.startAddress)
+                    shelf[L].add(each.endAddress)
+                else:
+                    #Aggregate sources and targets from submodel
+                    #All inGs
+                    for inG in each[1].inGList:
+                        #Individual inG
+                        for inGEl in inG:
+                            #individiaul source-target pair
+                            shelf[L-1].add(inGEl[0])
+                    #All outGs
+                    for outG in each[1].outGList:
+                        #Individual outG
+                        for outGEl in outG:
+                            #individiaul source-target pair
+                            shelf[L].add(outGEl[1])
+
+                    
+        for i in range(len(outGList)):
+            outG=outGList[i]
+            for each in outG:
+                shelf[lOutList[i]].add(each[0])
+        for i in range(len(inGList)):
+            inG=inGList[i]
+            for each in inG:
+                shelf[lInList[i]].add(each[1])
         return shelf
     
     def makeNDict(self,aDict=None,lSpace=None):
@@ -372,57 +399,57 @@ class Model:
         lSpace=lSpace or self.lSpace
         
         nodeshopper={}
-        for i in range(lSpace[0],lSpace[1]+1):
-            nodeshopper[i]={}
-        for i in range(lSpace[0],lSpace[1]+1):
-            for each in aDict[i]:
-                nodeshopper[i][each]=0
+        for L in range(lSpace[0],lSpace[1]+1):
+            nodeshopper[L]={}
+        for L in range(lSpace[0],lSpace[1]+1):
+            for each in aDict[L]:
+                nodeshopper[L][each]=0
         return nodeshopper
     
 
 
-    def connectionsRunner(self,inState,lSpace,bDict,lOut):        
+    def connectionsRunner(self,inState,lSpace,bDict,lOutList):        
         #Creating instance of nDict (to prevent overwriting from multiple runs)
         opNDict=copy.deepcopy(self.nDict)
         #Running Bridge Computations
         for i in range(len(self.inG)):
             if len(inState)>i:    #for example, if i=3, and length of 3, it means index 3 doesnt exist in inState, since it would only go up to 2. 
                 opNDict[self.lIn][self.inG[i]]=inState[i]  #Adds the inputs from inState to nDict at lIn
-        for i in range(lSpace[0]+1,lSpace[1]+1):
+        for L in range(lSpace[0]+1,lSpace[1]+1):
             
             #Activation function
-            if i!=lSpace[0]+1:
-                for i2 in opNDict[i]:
-                    opNDict[i][i2]=algs.leakyReLU(opNDict[i][i2])   #Tinker with activ func
+            if L!=lSpace[0]+1:
+                for i2 in opNDict[L]:
+                    opNDict[L][i2]=algs.leakyReLU(opNDict[L][i2])   #Tinker with activ func
                     
 
-            for each in bDict[i]:
+            for each in bDict[L]:
                 shelf=None
                 if type(each)==BRIDGE.Bridge:
-                    #print("Bridge should run here")
+                    #algs.printToDeep("Bridge should run here")
                     '''
-                    shelf=each.executeBridge(opNDict[i-1][each.startAddress]) #Activates each bridge, layer by layer.
-                    opNDict[i][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
+                    shelf=each.executeBridge(opNDict[L-1][each.startAddress]) #Activates each bridge, layer by layer.
+                    opNDict[L][shelf[1]]+=shelf[0] #Adds resultant value to nDict location
                     #Variant using experimental optimized individual value calculation
                     '''
                     each.executeBridgeDependent(opNDict)
                 '''
                 else:
-                    #print("Submodel should run here")
+                    #algs.printToDeep("Submodel should run here")
                     inStateSub=()
                     for each2 in each.inG:
-                        inStateSub.append(opNDict[i-1][each2])
+                        inStateSub.append(opNDict[L-1][each2])
                     shelf=each.runModel(inState=inStateSub)[0]
                 '''
 
                 
-            #print("Previous layer ",opNDict[i-1])
-            #print("Resultant layer ",opNDict[i])
+            #algs.printToDeep("Previous layer ",opNDict[L-1])
+            #algs.printToDeep("Resultant layer ",opNDict[L])
         outShelf=list()
         for each in self.outG:
             outShelf.append(opNDict[lOut][each])# #Pulls all outG elements into outShelf list
-            #print(outShelf)
-        #print(outShelf)
+            #algs.printToDeep(outShelf)
+        #algs.printToDeep(outShelf)
         self.outHandler.append((inState,outShelf))
         return outShelf
     
@@ -459,17 +486,17 @@ class Model:
 
         #Define target node
         self.setTarget(adjLSpace=adjLSpace)
-        #print("Adjusting at LB: ", self.adjPointerLB)
+        #algs.printToDeep("Adjusting at LB: ", self.adjPointerLB)
 
         shelf=self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjustElement(adjAmount=adjAmountProvided,idealE=idealE)
         oV=shelf[0]
         adjE=shelf[1]
         '''
-        print("Adjusted element at ",self.adjPointerLB)
+        algs.printToDeep("Adjusted element at ",self.adjPointerLB)
         if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
+            algs.printToDeep("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
+            algs.printToDeep("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
     
@@ -478,19 +505,19 @@ class Model:
     def setElement(self,adjAmount=0,idealE=None,adjLSpace=None):
 
         #Define target node
-        #print(type(self.adjPointerLB))
+        #algs.printToDeep(type(self.adjPointerLB))
         self.setTarget(adjLSpace=adjLSpace)
-        #print("Adjusting at LB: ", self.adjPointerLB)
+        #algs.printToDeep("Adjusting at LB: ", self.adjPointerLB)
 
         shelf=self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].setElement(adjAmount=adjAmount,idealE=idealE)
         oV=shelf[0]
         adjE=shelf[1]
         '''
-        print("Adjusted element at ",self.adjPointerLB)
+        algs.printToDeep("Adjusted element at ",self.adjPointerLB)
         if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
+            algs.printToDeep("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
+            algs.printToDeep("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
     
@@ -502,11 +529,11 @@ class Model:
         oV=shelf[0]
         adjE=shelf[1]
         '''
-        print("Adjusted element at ",self.adjPointerLB)
+        algs.printToDeep("Adjusted element at ",self.adjPointerLB)
         if type(self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]])==BRIDGE.Bridge:
-            print("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
+            algs.printToDeep("Bridge in scope below adjusted, adjusted element ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerE)
         else:
-            print("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
+            algs.printToDeep("Model adjusted in scope below, Pointer ",self.bDict[self.adjPointerLB[0]][self.adjPointerLB[1]].adjPointerLB)
         '''
         return (oV,adjE)
 
@@ -555,13 +582,13 @@ for i in range(testcount):
     end_time = time.perf_counter()
 
     elapsed_time2 = end_time - start_time
-    print(f"Elapsed time for Short Bridge Execution: {elapsed_time} seconds")
-    print(f"Elapsed time for full nDict transfer: {elapsed_time2} seconds")
-    print("Difference: ",elapsed_time-elapsed_time2)
+    algs.printToDeep(f"Elapsed time for Short Bridge Execution: {elapsed_time} seconds")
+    algs.printToDeep(f"Elapsed time for full nDict transfer: {elapsed_time2} seconds")
+    algs.printToDeep("Difference: ",elapsed_time-elapsed_time2)
     nettime+=(elapsed_time-elapsed_time2)
 
 #i fucking guess we go with full nDict transfer then. unless we 
 
-print("Total time difference (Positive indicates short failure, negative indicates full failure): ",nettime)
-print("Average time difference between iterations: ",nettime/testcount)###
+algs.printToDeep("Total time difference (Positive indicates short failure, negative indicates full failure): ",nettime)
+algs.printToDeep("Average time difference between iterations: ",nettime/testcount)###
 '''
